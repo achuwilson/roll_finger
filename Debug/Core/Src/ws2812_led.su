@@ -1,0 +1,6 @@
+ws2812_led.c:61:13:ws2812_timer2_init	64	static
+ws2812_led.c:97:13:ws2812_dma_start	24	static
+ws2812_led.c:206:23:get_channel_byte	16	static
+ws2812_led.c:218:13:fill_dma_buffer	64	static,ignoring_inline_asm
+ws2812_led.c:280:6:ws2812_refresh	40	static
+ws2812_led.c:399:6:ws2812_init	16	static
