@@ -71,7 +71,7 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 
 uint8_t RX1_Char = 0x00;
-uint32_t value[5];
+uint32_t value[7];
 int forcethres=20;
 struct pixel {
     uint8_t g;
@@ -235,7 +235,7 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, value, 5);
+  HAL_ADC_Start_DMA(&hadc1, value, 7);
   float MSG[50];// = {'\0'};
   long X = 0;
   char buffer[30];
@@ -313,7 +313,7 @@ int main(void)
 	 // HAL_ADC_PollForConversion (&hadc1, 1000);
 	  //	  value2 = HAL_ADC_GetValue (&hadc1);
 	  HAL_Delay(100);
-	 sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t \r\n ",value[0],value[1], value[2], value[3], value[4]);
+	 sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t%d \t%d \t \r\n ",value[0],value[1], value[2], value[3], value[4], value[5], value[6]);
 	  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
 	 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
 	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Val is : %d \r\n", X), 10);
@@ -454,7 +454,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
-  hadc1.Init.NbrOfConversion = 5;
+  hadc1.Init.NbrOfConversion = 7;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -498,6 +498,22 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_4;
   sConfig.Rank = ADC_REGULAR_RANK_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_7;
+  sConfig.Rank = ADC_REGULAR_RANK_6;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_6;
+  sConfig.Rank = ADC_REGULAR_RANK_7;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
