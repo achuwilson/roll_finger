@@ -211,7 +211,7 @@ void ir_led_off()
 
 }
 
-void set_mux1(value)
+void set_mux_fl(value)
 {
 
 
@@ -220,7 +220,7 @@ HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, value & 0b0010);
 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, value & 0b0100);
 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, value & 0b1000);
 }
-void set_mux2(value)
+void set_mux_fr(value)
 {
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, value & 0b0001);
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, value & 0b0010);
@@ -267,6 +267,12 @@ int main(void)
   float MSG[50];// = {'\0'};
   long X = 0;
   char buffer[30];
+
+  // IR proximity sensors
+  int num_irsensors = 10;
+  int irdata_fl[num_irsensors];
+  int irdata_fr[num_irsensors];
+  int data_fl_real, data_fr_real, data_fl_noise,data_fr_noise,data_fl,data_fr;
 
   int temp;
 
@@ -341,21 +347,53 @@ int main(void)
 	 // HAL_ADC_PollForConversion (&hadc1, 1000);
 	  //	  value2 = HAL_ADC_GetValue (&hadc1);
 
+	  for(int i=0;i<num_irsensors;i++)
+	  {
+		  // set IR off
+		  ir_led_off();
+
+		  // select mux channel
+		  set_mux_fl(i);
+		  set_mux_fr(i);
+
+		  //small delay
+		  HAL_Delay(1);
+
+		  // get initial readings
+		  data_fl_noise = adc_value[0];
+		  data_fr_noise = adc_value[1];
+
+		  // set IR on
+		  ir_led_on();
+		  //small delay
+		  HAL_Delay(1);
+
+		  // get second readings
+		  data_fl = adc_value[0];
+		  data_fr = adc_value[1];
+
+		  //calculate the real value and set it in ir_data array
+		  data_fl_real = -1*(data_fl - data_fl_noise);
+		  data_fr_real = -1*(data_fr - data_fr_noise);
+
+		  irdata_fl[i] = data_fl_real;
+		  irdata_fr[i] = data_fr_real;
+
+	  }
 	  // set ir led on
-	  ir_led_on();
+	 // ir_led_on();
 	  // set the selection ports
-	  set_mux1(8);
 
 
-	  set_mux2(8);
-
-	  HAL_Delay(100);
-	 sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t%d \t%d \t \r\n ",adc_value[0],adc_value[1], adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6]);
+	  HAL_Delay(1);
+	 //sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t%d \t%d \t \r\n ",adc_value[0],adc_value[1], adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6]);
+	  //sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6]);
+	  sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
 	  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
 	 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
 	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Val is : %d \r\n", X), 10);
-	  X=X+1;
-	  ir_led_off();
+	 // X=X+1;
+	  //ir_led_off();
 
 	  /*
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
