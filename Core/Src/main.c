@@ -71,7 +71,7 @@ static void MX_TIM2_Init(void);
 /* USER CODE BEGIN 0 */
 
 uint8_t RX1_Char = 0x00;
-uint32_t value[7];
+uint32_t adc_value[7];
 int forcethres=20;
 struct pixel {
     uint8_t g;
@@ -172,11 +172,11 @@ void open()
 	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
 		    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 		    		 HAL_Delay(100);
-		    		 while(value[2]<forcethres)
+		    		 while(adc_value[2]<forcethres)
 		    		 {
 	   		  		  }
 	         	  	HAL_Delay(30);
-		    	  	while(value[2]<forcethres)
+		    	  	while(adc_value[2]<forcethres)
 		      		  {
 	 		  		  }
 		    	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
@@ -188,11 +188,11 @@ void close()
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 		    		  HAL_Delay(100);
-		    		  while(value[2]<forcethres)
+		    		  while(adc_value[2]<forcethres)
 		    		  {
 		    		  }
 		    		  HAL_Delay(30);
-		    		  while(value[2]<forcethres)
+		    		  while(adc_value[2]<forcethres)
 		    		  {
 		    		  }
 		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
@@ -200,6 +200,33 @@ void close()
 
 }
 
+void ir_led_on()
+{
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
+}
+
+void ir_led_off()
+{
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+
+}
+
+void set_mux1(value)
+{
+
+
+HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, value & 0b0001);
+HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, value & 0b0010);
+HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, value & 0b0100);
+HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, value & 0b1000);
+}
+void set_mux2(value)
+{
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, value & 0b0001);
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, value & 0b0010);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, value & 0b0100);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, value & 0b1000);
+}
 /* USER CODE END 0 */
 
 /**
@@ -235,7 +262,8 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, value, 7);
+  //start ADC conversations
+  HAL_ADC_Start_DMA(&hadc1, adc_value, 7);
   float MSG[50];// = {'\0'};
   long X = 0;
   char buffer[30];
@@ -291,9 +319,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	// HAL_ADC_Start_DMA(&hadc1, &value, 3);
+	// HAL_ADC_Start_DMA(&hadc1, &adc_value, 3);
 	  //HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); //LED
-	  HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5); //IR LED STROBE
+	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5); //IR LED STROBE
 
 /*
 	  for (ch = 0; ch < WS2812_NUM_CHANNELS; ch++)
@@ -308,39 +336,48 @@ int main(void)
 
 	  //HAL_ADC_Start (&hadc1);
 	  //HAL_ADC_PollForConversion (&hadc1, 1000);
-	  //value = HAL_ADC_GetValue (&hadc1);
+	  //adc_value = HAL_ADC_GetValue (&hadc1);
 	 // HAL_ADC_Start (&hadc1);
 	 // HAL_ADC_PollForConversion (&hadc1, 1000);
 	  //	  value2 = HAL_ADC_GetValue (&hadc1);
+
+	  // set ir led on
+	  ir_led_on();
+	  // set the selection ports
+	  set_mux1(8);
+
+
+	  set_mux2(8);
+
 	  HAL_Delay(100);
-	 sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t%d \t%d \t \r\n ",value[0],value[1], value[2], value[3], value[4], value[5], value[6]);
+	 sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t%d \t%d \t \r\n ",adc_value[0],adc_value[1], adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6]);
 	  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
 	 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
 	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Val is : %d \r\n", X), 10);
 	  X=X+1;
-
+	  ir_led_off();
 
 	  /*
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 	  HAL_Delay(200);
-	  while(value[2]<forcethres)
+	  while(adc_value[2]<forcethres)
 	  {
 	  }
 	  HAL_Delay(30);
-	  while(value[2]<forcethres)
+	  while(adc_value[2]<forcethres)
 	  {
 	  }
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
 	  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 	  	  HAL_Delay(200);
-	  	while(value[2]<forcethres)
+	  	while(adc_value[2]<forcethres)
 	  		  {
 
 	  		  }
 	  	HAL_Delay(30);
-	  	while(value[2]<forcethres)
+	  	while(adc_value[2]<forcethres)
 	  		  		  {
 
 	  		  		  }
@@ -663,11 +700,12 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_3|GPIO_PIN_4
-                          |GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_10|GPIO_PIN_11
+                          |GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15
+                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8|GPIO_PIN_11|GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -676,17 +714,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB0 PB1 PB3 PB4
-                           PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_3|GPIO_PIN_4
-                          |GPIO_PIN_5;
+  /*Configure GPIO pins : PB0 PB1 PB10 PB11
+                           PB12 PB13 PB14 PB15
+                           PB3 PB4 PB5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_10|GPIO_PIN_11
+                          |GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15
+                          |GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA8 */
-  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  /*Configure GPIO pins : PA8 PA11 PA12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_11|GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
