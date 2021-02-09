@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -52,6 +53,9 @@ DMA_HandleTypeDef hdma_tim2_up;
 
 UART_HandleTypeDef huart1;
 
+osThreadId statusupdateHandle;
+osThreadId serialreaderHandle;
+osTimerId pidTimerHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -63,6 +67,10 @@ static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
+void status_update_task(void const * argument);
+void serial_reader_task(void const * argument);
+void pid_timer(void const * argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -79,6 +87,8 @@ struct pixel {
     uint8_t b;
 };
 struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
+//serial write buffer
+char buffer[30];
 
 void make_pretty_colors(struct pixel *framebuffer, int channel, int state)
 {
@@ -266,7 +276,7 @@ int main(void)
   HAL_ADC_Start_DMA(&hadc1, adc_value, 7);
   float MSG[50];// = {'\0'};
   long X = 0;
-  char buffer[30];
+
 
   // IR proximity sensors
   int num_irsensors = 10;
@@ -321,32 +331,50 @@ int main(void)
 
   /* USER CODE END 2 */
 
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* definition and creation of pidTimer */
+  osTimerDef(pidTimer, pid_timer);
+  pidTimerHandle = osTimerCreate(osTimer(pidTimer), osTimerPeriodic, NULL);
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  osTimerStart(pidTimerHandle, 500);
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of statusupdate */
+  osThreadDef(statusupdate, status_update_task, osPriorityNormal, 0, 128);
+  statusupdateHandle = osThreadCreate(osThread(statusupdate), NULL);
+
+  /* definition and creation of serialreader */
+  osThreadDef(serialreader, serial_reader_task, osPriorityIdle, 0, 128);
+  serialreaderHandle = osThreadCreate(osThread(serialreader), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	// HAL_ADC_Start_DMA(&hadc1, &adc_value, 3);
-	  //HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13); //LED
-	  //HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_5); //IR LED STROBE
-
-/*
-	  for (ch = 0; ch < WS2812_NUM_CHANNELS; ch++)
-	              make_pretty_colors(channel_framebuffers[ch], ch, animation_state);
-
-	          animation_state++;
-
-	          __disable_irq();
-	          ws2812_refresh(led_channels, GPIOB);
-	          __enable_irq();
-*/
-
-	  //HAL_ADC_Start (&hadc1);
-	  //HAL_ADC_PollForConversion (&hadc1, 1000);
-	  //adc_value = HAL_ADC_GetValue (&hadc1);
-	 // HAL_ADC_Start (&hadc1);
-	 // HAL_ADC_PollForConversion (&hadc1, 1000);
-	  //	  value2 = HAL_ADC_GetValue (&hadc1);
-
+	  /*
 	  for(int i=0;i<num_irsensors;i++)
 	  {
 		  // set IR off
@@ -392,35 +420,8 @@ int main(void)
 	  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
 	 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
 	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Val is : %d \r\n", X), 10);
-	 // X=X+1;
-	  //ir_led_off();
 
-	  /*
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-	  HAL_Delay(200);
-	  while(adc_value[2]<forcethres)
-	  {
-	  }
-	  HAL_Delay(30);
-	  while(adc_value[2]<forcethres)
-	  {
-	  }
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-	  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-	  	  HAL_Delay(200);
-	  	while(adc_value[2]<forcethres)
-	  		  {
 
-	  		  }
-	  	HAL_Delay(30);
-	  	while(adc_value[2]<forcethres)
-	  		  		  {
-
-	  		  		  }
-
-	  	*/
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 	    if(RX1_Char == 'c') //close
 	    {
@@ -451,6 +452,7 @@ int main(void)
 	    	HAL_UART_Receive_IT(&huart1, &RX1_Char, 1);
 	    		    	    		  	RX1_Char = 0x00;
 	    }
+	    */
 
     /* USER CODE END WHILE */
 
@@ -705,16 +707,16 @@ static void MX_DMA_Init(void)
 
   /* DMA interrupt init */
   /* DMA1_Channel1_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
   /* DMA1_Channel2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
   /* DMA1_Channel5_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel5_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel5_IRQn);
   /* DMA1_Channel7_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 5, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
 
 }
@@ -775,6 +777,74 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_status_update_task */
+/**
+  * @brief  Function implementing the statusupdate thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_status_update_task */
+void status_update_task(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, " UPDATE TASK \n", 1), 10);
+    osDelay(2000);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_serial_reader_task */
+/**
+* @brief Function implementing the serialreader thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_serial_reader_task */
+void serial_reader_task(void const * argument)
+{
+  /* USER CODE BEGIN serial_reader_task */
+  /* Infinite loop */
+  for(;;)
+  {
+	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
+    osDelay(1000);
+  }
+  /* USER CODE END serial_reader_task */
+}
+
+/* pid_timer function */
+void pid_timer(void const * argument)
+{
+  /* USER CODE BEGIN pid_timer */
+	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "TIMER \n", 1), 10);
+
+  /* USER CODE END pid_timer */
+}
+
+ /**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM3 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM3) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
