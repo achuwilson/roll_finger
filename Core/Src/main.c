@@ -392,7 +392,7 @@ int main(void)
   adcreaderHandle = osThreadCreate(osThread(adcreader), NULL);
 
   /* definition and creation of serialreader */
-  osThreadDef(serialreader, serial_reader_task, osPriorityIdle, 0, 128);
+  osThreadDef(serialreader, serial_reader_task, osPriorityNormal, 0, 128);
   serialreaderHandle = osThreadCreate(osThread(serialreader), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
