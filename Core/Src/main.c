@@ -334,12 +334,8 @@ int main(void)
 
       __enable_irq();
       HAL_Delay(200);
-      /*
-      for (int i = 0; i < WS2812_NUM_CHANNELS; i++) {
-              led_channels[i].framebuffer = channel_framebuffers[i];
-              led_channels[i].length = FRAMEBUFFER_SIZE * sizeof(struct pixel);
-          }
-          */
+
+      //INITIALIZE NEOPIXELS
       //channel 0
       led_channels[0].framebuffer = channel_framebuffers[0];
       led_channels[0].length = FRAMEBUFFER_SIZE * sizeof(struct pixel);
@@ -349,27 +345,15 @@ int main(void)
       led_channels[1].length = FRAMEBUFFER2_SIZE * sizeof(struct pixel);
 
       HAL_Delay(200);
-          ws2812_init();
-          HAL_Delay(200);
+      ws2812_init();
+      HAL_Delay(200);
+      // SETUP LED COLORS
+      lightupLED(channel_framebuffers[0]);
+      lightupLED2(channel_framebuffers[1]);
 
-       sprintf(MSG, "INIT \r\n ");
-      	  HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
-
-
-  sprintf(MSG, "INIT 2\r\n ");
-   	  HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
-
-   //	make_pretty_colors(channel_framebuffers[0], 0,0);
-   	lightupLED(channel_framebuffers[0]);
-	lightupLED2(channel_framebuffers[1]);
-
-   		         // animation_state++;
-
-   		          __disable_irq();
-   		       //HAL_Delay(200);
-   		          ws2812_refresh(led_channels, GPIOB);
-   		       //HAL_Delay(200);
-   		          __enable_irq();
+   	  __disable_irq();
+   	  ws2812_refresh(led_channels, GPIOB);
+   	  __enable_irq();
 
   /* USER CODE END 2 */
 
@@ -954,8 +938,7 @@ void adc_reader_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	// int irdata_fl[num_irsensors];
-	//  int irdata_fr[num_irsensors];
+
 
 	  for(int i=0;i<num_irsensors;i++)
 	  	  {
@@ -991,13 +974,6 @@ void adc_reader_task(void const * argument)
 
 	  	  }
 
-	 //sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6]);
-	  //	  sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
-	  /*	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
-*/
-
-	//  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, " U %d \n", irdata_fr[0]), 25);
-    //osDelay(2);
   }
   /* USER CODE END 5 */
 }
