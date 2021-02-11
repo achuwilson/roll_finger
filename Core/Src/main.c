@@ -409,20 +409,6 @@ int main(void)
   {
 	  /*
 
-	  // set ir led on
-	 // ir_led_on();
-	  // set the selection ports
-
-
-	  HAL_Delay(1);
-	 //sprintf(MSG, "Data = %d \t %d  \t %d %d  \t%d  \t%d \t%d \t \r\n ",adc_value[0],adc_value[1], adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6]);
-	  //sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6]);
-	  sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
-	  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
-	 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
-	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Val is : %d \r\n", X), 10);
-
-
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
 	    if(RX1_Char == 'c') //close
 	    {
