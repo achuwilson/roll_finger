@@ -53,9 +53,10 @@ DMA_HandleTypeDef hdma_tim2_up;
 
 UART_HandleTypeDef huart1;
 
-osThreadId statusupdateHandle;
+osThreadId adcreaderHandle;
 osThreadId serialreaderHandle;
 osTimerId pidTimerHandle;
+osTimerId statusUpdateHandle;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -67,9 +68,10 @@ static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
-void status_update_task(void const * argument);
+void adc_reader_task(void const * argument);
 void serial_reader_task(void const * argument);
 void pid_timer(void const * argument);
+void status_update_timer(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -89,6 +91,13 @@ struct pixel {
 struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
 //serial write buffer
 char buffer[30];
+float MSG[50];
+
+// IR proximity sensors
+  int num_irsensors = 10;
+  int irdata_fl[10];
+  int irdata_fr[10];
+  int data_fl_real, data_fr_real, data_fl_noise,data_fr_noise,data_fl,data_fr;
 
 void make_pretty_colors(struct pixel *framebuffer, int channel, int state)
 {
@@ -274,15 +283,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //start ADC conversations
   HAL_ADC_Start_DMA(&hadc1, adc_value, 7);
-  float MSG[50];// = {'\0'};
+  // = {'\0'};
   long X = 0;
 
 
-  // IR proximity sensors
-  int num_irsensors = 10;
-  int irdata_fl[num_irsensors];
-  int irdata_fr[num_irsensors];
-  int data_fl_real, data_fr_real, data_fl_noise,data_fr_noise,data_fl,data_fr;
+
 
   int temp;
 
@@ -344,9 +349,16 @@ int main(void)
   osTimerDef(pidTimer, pid_timer);
   pidTimerHandle = osTimerCreate(osTimer(pidTimer), osTimerPeriodic, NULL);
 
+  /* definition and creation of statusUpdate */
+  osTimerDef(statusUpdate, status_update_timer);
+  statusUpdateHandle = osTimerCreate(osTimer(statusUpdate), osTimerPeriodic, NULL);
+
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
-  osTimerStart(pidTimerHandle, 500);
+  // PID timer runs at 100hz
+  osTimerStart(pidTimerHandle, 10);
+  //status update timer runs at 100 hz
+  osTimerStart(statusUpdateHandle, 10);
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -354,9 +366,9 @@ int main(void)
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* definition and creation of statusupdate */
-  osThreadDef(statusupdate, status_update_task, osPriorityNormal, 0, 128);
-  statusupdateHandle = osThreadCreate(osThread(statusupdate), NULL);
+  /* definition and creation of adcreader */
+  osThreadDef(adcreader, adc_reader_task, osPriorityNormal, 0, 128);
+  adcreaderHandle = osThreadCreate(osThread(adcreader), NULL);
 
   /* definition and creation of serialreader */
   osThreadDef(serialreader, serial_reader_task, osPriorityIdle, 0, 128);
@@ -375,39 +387,7 @@ int main(void)
   while (1)
   {
 	  /*
-	  for(int i=0;i<num_irsensors;i++)
-	  {
-		  // set IR off
-		  ir_led_off();
 
-		  // select mux channel
-		  set_mux_fl(i);
-		  set_mux_fr(i);
-
-		  //small delay
-		  HAL_Delay(1);
-
-		  // get initial readings
-		  data_fl_noise = adc_value[0];
-		  data_fr_noise = adc_value[1];
-
-		  // set IR on
-		  ir_led_on();
-		  //small delay
-		  HAL_Delay(1);
-
-		  // get second readings
-		  data_fl = adc_value[0];
-		  data_fr = adc_value[1];
-
-		  //calculate the real value and set it in ir_data array
-		  data_fl_real = -1*(data_fl - data_fl_noise);
-		  data_fr_real = -1*(data_fr - data_fr_noise);
-
-		  irdata_fl[i] = data_fl_real;
-		  irdata_fr[i] = data_fr_real;
-
-	  }
 	  // set ir led on
 	 // ir_led_on();
 	  // set the selection ports
@@ -778,21 +758,63 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_status_update_task */
+/* USER CODE BEGIN Header_adc_reader_task */
 /**
-  * @brief  Function implementing the statusupdate thread.
+  * @brief  Function implementing the adcreader thread.
   * @param  argument: Not used
   * @retval None
   */
-/* USER CODE END Header_status_update_task */
-void status_update_task(void const * argument)
+/* USER CODE END Header_adc_reader_task */
+void adc_reader_task(void const * argument)
 {
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
   {
-	  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, " UPDATE TASK \n", 1), 10);
-    osDelay(2000);
+	// int irdata_fl[num_irsensors];
+	//  int irdata_fr[num_irsensors];
+
+	  for(int i=0;i<num_irsensors;i++)
+	  	  {
+	  		  // set IR off
+	  		  ir_led_off();
+
+	  		  // select mux channel
+	  		  set_mux_fl(i);
+	  		  set_mux_fr(i);
+
+	  		  //small delay
+	  		  HAL_Delay(1);
+
+	  		  // get initial readings
+	  		  data_fl_noise = adc_value[0];
+	  		  data_fr_noise = adc_value[1];
+
+	  		  // set IR on
+	  		  ir_led_on();
+	  		  //small delay
+	  		  HAL_Delay(1);
+
+	  		  // get second readings
+	  		  data_fl = adc_value[0];
+	  		  data_fr = adc_value[1];
+
+	  		  //calculate the real value and set it in ir_data array
+	  		  data_fl_real = -1*(data_fl - data_fl_noise);
+	  		  data_fr_real = -1*(data_fr - data_fr_noise);
+
+	  		  irdata_fl[i] = data_fl_real;
+	  		  irdata_fr[i] = data_fr_real;
+
+	  	  }
+
+	 //sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6]);
+	  //	  sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+	  /*	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
+*/
+
+	//  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, " U %d \n", irdata_fr[0]), 25);
+    //osDelay(2);
   }
   /* USER CODE END 5 */
 }
@@ -810,8 +832,8 @@ void serial_reader_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
-    osDelay(1000);
+	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
+    osDelay(1);
   }
   /* USER CODE END serial_reader_task */
 }
@@ -820,9 +842,23 @@ void serial_reader_task(void const * argument)
 void pid_timer(void const * argument)
 {
   /* USER CODE BEGIN pid_timer */
-	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "TIMER \n", 1), 10);
+	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "TIMER \n", 1), 10);
+	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
+	//HAL_GPIO_WritePin(GPIOB, , value & 0b0001);
 
   /* USER CODE END pid_timer */
+}
+
+/* status_update_timer function */
+void status_update_timer(void const * argument)
+{
+  /* USER CODE BEGIN status_update_timer */
+
+	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
+	sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+		  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
+		 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
+  /* USER CODE END status_update_timer */
 }
 
  /**
