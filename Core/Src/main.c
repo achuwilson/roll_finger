@@ -91,7 +91,7 @@ struct pixel {
 struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
 //serial write buffer
 char buffer[30];
-float MSG[50];
+float MSG[150];
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -854,8 +854,18 @@ void status_update_timer(void const * argument)
 {
   /* USER CODE BEGIN status_update_timer */
 
+	/* Serial Data Format
+	 *  M1-2 current, M1Pos, M2Pos, M3Pos, M4Pos, irsens_left[10], irsens_right[10]
+	 *
+	 */
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
-	sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+	//sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",
+	//		irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+
+	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
+			adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6],
+				irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
+				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 		  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
 		 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
   /* USER CODE END status_update_timer */
