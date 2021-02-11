@@ -47,6 +47,7 @@ ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
 DMA_HandleTypeDef hdma_tim2_ch2_ch4;
 DMA_HandleTypeDef hdma_tim2_ch1;
 DMA_HandleTypeDef hdma_tim2_up;
@@ -68,6 +69,7 @@ static void MX_DMA_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM4_Init(void);
 void adc_reader_task(void const * argument);
 void serial_reader_task(void const * argument);
 void pid_timer(void const * argument);
@@ -280,9 +282,36 @@ int main(void)
   MX_USART1_UART_Init();
   MX_ADC1_Init();
   MX_TIM2_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   //start ADC conversations
   HAL_ADC_Start_DMA(&hadc1, adc_value, 7);
+
+  //START PWM TIMERS
+  /* PWM frequency is set  =Fclk/((ARR+1)*(PSC+1))
+   *	Fclk =  clock frequency
+   *	ARR = Counter Period (AutoReload Register - 16 bits value, set from Timer-> Parameter Settings
+   *	PSC  =  Prescaler value, set from Timer-> Parameter Settings
+   *
+   *	so for 20Khz,
+   *		20000 = 56000000/x
+   *		x = 2800, so ARR  =  2799 and PSC=0
+   *		now, 2800 will correspond to 100% pwm and can be set either by
+   *		TIM4->CCR1 = pwm_value;
+   *		or
+   *		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, pwm_value);
+   *
+   */
+  HAL_TIM_Base_Start(&htim4);
+  HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_4);
+
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 280);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 560);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 1080);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2000);
   // = {'\0'};
   long X = 0;
 
@@ -644,6 +673,77 @@ static void MX_TIM2_Init(void)
 }
 
 /**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 0;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 2799;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+  HAL_TIM_MspPostInit(&htim4);
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -855,7 +955,7 @@ void status_update_timer(void const * argument)
   /* USER CODE BEGIN status_update_timer */
 
 	/* Serial Data Format
-	 *  M1-2 current, M1Pos, M2Pos, M3Pos, M4Pos, irsens_left[10], irsens_right[10]
+	 *  M1-2_current, M1Pos, M2Pos, M3Pos, M4Pos, irsens_left[10], irsens_right[10]
 	 *
 	 */
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
