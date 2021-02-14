@@ -96,6 +96,7 @@ struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
 //serial write buffer
 char buffer[30];
 float MSG[150];
+uint8_t UART1_rxBuffer[6] = {0};
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -185,13 +186,16 @@ void lightupLED2(struct pixel *framebuffer)
 	}
 }
 //---------[ UART Data Reception Completion CallBackFunc. ]---------
-void HAL_USART_RxCpltCallback(UART_HandleTypeDef *huart)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	HAL_UART_Receive_IT(&huart1, &RX1_Char, 1);
+   // HAL_UART_Transmit(&huart1, UART1_rxBuffer, 6, 100);  //for debug
+    HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 6);
+
 }
 
 void open()
 {
+
 	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
 		    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 		    		 HAL_Delay(100);
@@ -232,6 +236,14 @@ void ir_led_off()
 {
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
 
+}
+
+void clear_rxBuffer(void)
+{
+	for (int i = 0; i < 6; ++i) // Using for loop we are initializing
+	{
+		UART1_rxBuffer[i] = 0;
+	}
 }
 
 void set_mux_fl(value)
@@ -289,6 +301,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //start ADC conversations
   HAL_ADC_Start_DMA(&hadc1, adc_value, 7);
+
+  // Start UART interrupts
+  /* When UART gets 6 bytes, it calls the function
+   * HAL_UART_RxCpltCallback(
+   *
+   */
+  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 6);
 
   //START PWM TIMERS
   /* PWM frequency is set  =Fclk/((ARR+1)*(PSC+1))
@@ -529,7 +548,7 @@ static void MX_ADC1_Init(void)
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_41CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {
+  {https://www.nih.gov/news-events/news-releases/researchers-propose-humidity-masks-may-lessen-severity-covid-19
     Error_Handler();
   }
   /** Configure Regular Channel
@@ -977,8 +996,28 @@ void serial_reader_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+	  /*Valid serial commands
+	   * 	o - open finger
+	   * 	cp - close finger with position hold
+	   * 	s - stop
+	   * 	ccXXX -close finger with current hold
+	   *    lfXXX - left finger position roll
+	   *    rfXXX - right finger position roll
+	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
-    osDelay(1);
+	  if(UART1_rxBuffer[0]=='c')
+	  {
+		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Got C \n", 1), 10);
+
+		  if(UART1_rxBuffer[1]=='c')
+		  {
+
+		  }
+		  clear_rxBuffer();
+	  }
+    osDelay(10);
+    HAL_UART_Transmit(&huart1, UART1_rxBuffer, 6, 100);
+
   }
   /* USER CODE END serial_reader_task */
 }
@@ -1006,13 +1045,15 @@ void status_update_timer(void const * argument)
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
 	//sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",
 	//		irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+	//sprintf(MSG,"Data = %d \t end \r\n", RX1_Char);
 
 	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
 			adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6],
 				irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 		  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
-		 HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
+
+	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
   /* USER CODE END status_update_timer */
 }
 
