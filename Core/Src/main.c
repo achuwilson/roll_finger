@@ -1007,30 +1007,54 @@ void serial_reader_task(void const * argument)
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
 	  //close gripper
-	  if(UART1_rxBuffer[0]=='c')
+	  switch(UART1_rxBuffer[0])
 	  {
 
-		  //close in current control mode
-		  if(UART1_rxBuffer[1]=='c')
-		  {
-			  // create the NULL terminated character array with the values
-			  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-			  int cmd_val = atoi(val_ar);
-
-			  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cc %d \n", cmd_val), 10);
-			  if(cmd_val>100)
-			  {
-				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Hundrd \n", 1), 10);
-			  }
-
-
-		  }
-		  //close in position hold mode
-		  else if(UART1_rxBuffer[1]=='p')
-		  {
-
-		  }
+	  case 'c':
+	  	  {
+			  //close in current control mode
+			  if(UART1_rxBuffer[1]=='c')
+			  	  {
+				  // create the NULL terminated character array with the values
+				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+				  int cmd_val = atoi(val_ar);
+				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cc %d \n", cmd_val), 100);
+			  	  }
+			  //close in position hold mode
+			  else if(UART1_rxBuffer[1]=='p')
+		  	  	  {
+				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cp  \n", 1), 100);
+		  	  	  }
 		  clear_rxBuffer();
+	  	  }break;
+	  case 's':
+	  	  {
+		  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
+		  clear_rxBuffer();
+	  	  }break;
+	  case 'o':
+	  	  {
+	  	  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN \n", 1), 100);
+	  	  clear_rxBuffer();
+	  	  }break;
+	  case 'r':
+	  	  {
+	  		char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+	  		int cmd_val = atoi(val_ar);
+	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
+	  	  clear_rxBuffer();
+	  	  }break;
+	   case 'l':
+	  	  {
+	  	  	char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+	  	  	int cmd_val = atoi(val_ar);
+	  	  	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
+	  	  	clear_rxBuffer();
+	  	  }break;
+
+	   default:
+		   clear_rxBuffer();
+
 	  }
     osDelay(10);
     //HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);
@@ -1068,9 +1092,9 @@ void status_update_timer(void const * argument)
 			adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6],
 				irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
-		  //sprintf(MSG, "Hello Dudes! COUNT = %d \r\n ",X);
 
-	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
+
+	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
   /* USER CODE END status_update_timer */
 }
 
