@@ -228,6 +228,22 @@ void close()
 
 }
 
+void stop_all()
+{/*Stops all motors*/
+
+	//reset the GPIO for open-close motors
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+
+	//set all PWMs to 0
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+  	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
+
+}
+
 void ir_led_on()
 {
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
@@ -1029,7 +1045,8 @@ void serial_reader_task(void const * argument)
 	  	  }break;
 	  case 's':
 	  	  {
-		  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
+		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
+	  	  stop_all();
 		  clear_rxBuffer();
 	  	  }break;
 	  case 'o':
