@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include "ws2812_led.h"
+#include <stdlib.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,7 +97,7 @@ struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
 //serial write buffer
 char buffer[30];
 float MSG[150];
-uint8_t UART1_rxBuffer[6] = {0};
+char UART1_rxBuffer[5] = {0};
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -188,8 +189,8 @@ void lightupLED2(struct pixel *framebuffer)
 //---------[ UART Data Reception Completion CallBackFunc. ]---------
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-   // HAL_UART_Transmit(&huart1, UART1_rxBuffer, 6, 100);  //for debug
-    HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 6);
+   // HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);  //for debug
+    HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
 
 }
 
@@ -303,11 +304,11 @@ int main(void)
   HAL_ADC_Start_DMA(&hadc1, adc_value, 7);
 
   // Start UART interrupts
-  /* When UART gets 6 bytes, it calls the function
+  /* When UART gets 5 bytes, it calls the function
    * HAL_UART_RxCpltCallback(
    *
    */
-  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 6);
+  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
 
   //START PWM TIMERS
   /* PWM frequency is set  =Fclk/((ARR+1)*(PSC+1))
@@ -1005,18 +1006,34 @@ void serial_reader_task(void const * argument)
 	   *    rfXXX - right finger position roll
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
+	  //close gripper
 	  if(UART1_rxBuffer[0]=='c')
 	  {
-		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Got C \n", 1), 10);
 
+		  //close in current control mode
 		  if(UART1_rxBuffer[1]=='c')
+		  {
+			  // create the NULL terminated character array with the values
+			  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+			  int cmd_val = atoi(val_ar);
+
+			  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cc %d \n", cmd_val), 10);
+			  if(cmd_val>100)
+			  {
+				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Hundrd \n", 1), 10);
+			  }
+
+
+		  }
+		  //close in position hold mode
+		  else if(UART1_rxBuffer[1]=='p')
 		  {
 
 		  }
 		  clear_rxBuffer();
 	  }
     osDelay(10);
-    HAL_UART_Transmit(&huart1, UART1_rxBuffer, 6, 100);
+    //HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);
 
   }
   /* USER CODE END serial_reader_task */
