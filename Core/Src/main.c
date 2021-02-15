@@ -246,12 +246,17 @@ void stop_all()
 
 void move_lf(int pwmval)
 {
+	//scale the value from 0 to 100 => 0 to 2800
+	pwmval = scale_val(pwmval,0,100, 0, 2800);
+	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LFF %d \n", pwmval), 100);
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, pwmval);
 }
 
 void move_lr(int pwmval)
 {
+	//scale the value from 0 to 100 => 0 to 2800
+	pwmval = scale_val(pwmval,0,100, 0, 2800);
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, pwmval);
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
 }
@@ -289,6 +294,21 @@ void set_mux_fr(value)
 	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_11, value & 0b0010);
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, value & 0b0100);
 	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, value & 0b1000);
+}
+
+int scale_val(int inval, int inmin, int inmax, int outmin, int outmax)
+{
+	if (inval>=inmax)
+	{
+		inval = inmax;
+	}
+	else if(inval<=inmin)
+	{
+		inval =inmin;
+	}
+
+	double slope = 1.0 * (outmax - outmin) / (inmax - inmin);
+	return outmin + slope * (inval - inmin);
 }
 /* USER CODE END 0 */
 
@@ -1180,7 +1200,7 @@ void status_update_timer(void const * argument)
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
-	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 100);
+	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 100);
   /* USER CODE END status_update_timer */
 }
 
