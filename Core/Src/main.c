@@ -106,17 +106,16 @@ _Bool canMoveB_LF=1;
 _Bool canMoveF_RF =1;
 _Bool canMoveB_RF =1;
 
-uint8_t isMoveF_LF=0;
-uint8_t isMoveB_LF=0;
-uint8_t isMoveF_RF =0;
-uint8_t isMoveB_RF =0;
+
 int lfw = 0;
 int lrw = 0;
+int rfw =0;
+int rrw=0;
 
 uint32_t LFMaxPos = 2000;
 uint32_t LFMinPos = 500;
-uint32_t RFMaxPos = 3200;
-uint32_t RFMinPos = 180;
+uint32_t RFMaxPos = 2000;
+uint32_t RFMinPos = 500;
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -282,13 +281,7 @@ void move_lf(int pwmval)
 		osSemaphoreRelease(BinSemHandle);
 		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "S2 %d  %d \n", adc_value[6],isMoveF_LF ), 100);
 	}
-	/*else
-	{
-		//isMoveF_LF =0;
-		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
-		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
 
-	}*/
 }
 
 void move_lb(int pwmval)
@@ -305,14 +298,48 @@ void move_lb(int pwmval)
 		osSemaphoreRelease(BinSemHandle);
 
 	}
-	/*else
-	{
-	//	isMoveB_LF = 0;
-		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
-		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
 
-	}*/
 }
+
+void move_rf(int pwmval)
+{
+	//	Check whether we are at the end positions
+		//LF pos given by adc_value[6]
+		// min value is around 100, max value 4000, so we set limits as 120 and 3900
+		//scale the value from 0 to 100 => 0 to 2800
+	if(adc_value[5]<RFMaxPos)
+	{
+		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "S1 %d  %d \n", adc_value[6],isMoveF_LF ), 100);
+		osSemaphoreWait(BinSemHandle, osWaitForever);
+		// set the moving flag
+		rfw= 1;
+
+		pwmval = scale_val(pwmval,0,100, 0, 2800);
+		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
+		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, pwmval);
+		osSemaphoreRelease(BinSemHandle);
+		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "S2 %d  %d \n", adc_value[6],isMoveF_LF ), 100);
+	}
+
+}
+
+void move_rb(int pwmval)
+{
+	if(adc_value[5]>RFMinPos)
+	{
+		osSemaphoreWait(BinSemHandle, osWaitForever);
+		//isMoveB_LF = 1;
+		rrw=1;
+		//scale the value from 0 to 100 => 0 to 2800
+		pwmval = scale_val(pwmval,0,100, 0, 2800);
+		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, pwmval);
+		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+		osSemaphoreRelease(BinSemHandle);
+
+	}
+
+}
+
 void ir_led_on()
 {
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
@@ -1177,17 +1204,19 @@ void serial_reader_task(void const * argument)
 	  	  	//right finger position control
 	  	  	if(UART1_rxBuffer[1]=='p')
 	  	  		{
-	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
+	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
 	  	  		}
 	  	  	//right finger move forward at velocity
 	  	  	else if(UART1_rxBuffer[1]=='f')
 	  	  		{
-	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RF %d \n", cmd_val), 100);
+	  	  		move_rf(cmd_val);
+	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RF %d \n", cmd_val), 100);
 	  	  		}
 	  	  	//right finger move reverse at velocity
 	  	  	else if(UART1_rxBuffer[1]=='r')
 	  	  		{
-	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RR %d \n", cmd_val), 100);
+	  	  		move_rb(cmd_val);
+	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RR %d \n", cmd_val), 100);
 	  	  		}
 	  	  clear_rxBuffer();
 	  	  }break;
@@ -1243,12 +1272,8 @@ void pid_timer(void const * argument)
 		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
 		lfw=0;
 		osSemaphoreRelease(BinSemHandle);
-		//osDelay(10);
-		//isMoveF_LF =0;
-		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "MAXP %d  %d \n", adc_value[6],isMoveF_LF ), 100);
-
 	}
-	if((adc_value[6]<LFMinPos) && (lrw==1))
+	else if((adc_value[6]<LFMinPos) && (lrw==1))
 	{
 		osSemaphoreWait(BinSemHandle, osWaitForever);
 
@@ -1256,10 +1281,26 @@ void pid_timer(void const * argument)
 		__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
 		lrw=0;
 		osSemaphoreRelease(BinSemHandle);
-		//osDelay(10);
-		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "MINP %d %d \n", adc_value[6], isMoveF_LF ), 100);
-
 	}
+
+	if((adc_value[5]>RFMaxPos) && (rfw==1))
+		{
+			osSemaphoreWait(BinSemHandle, osWaitForever);
+
+			__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
+			__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+			rfw=0;
+			osSemaphoreRelease(BinSemHandle);
+		}
+		else if((adc_value[5]<RFMinPos) && (rrw==1))
+		{
+			osSemaphoreWait(BinSemHandle, osWaitForever);
+
+			__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
+			__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+			rrw=0;
+			osSemaphoreRelease(BinSemHandle);
+		}
   /* USER CODE END pid_timer */
 }
 
