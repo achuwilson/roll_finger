@@ -244,6 +244,17 @@ void stop_all()
 
 }
 
+void move_lf(int pwmval)
+{
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, pwmval);
+}
+
+void move_lr(int pwmval)
+{
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, pwmval);
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
+}
 void ir_led_on()
 {
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_SET);
@@ -351,11 +362,11 @@ int main(void)
   HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
 
 
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 10);
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 560);
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 1080);
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2000);
-  	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 1560);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+  	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
   // = {'\0'};
   long X = 0;
 
@@ -428,7 +439,7 @@ int main(void)
   adcreaderHandle = osThreadCreate(osThread(adcreader), NULL);
 
   /* definition and creation of serialreader */
-  osThreadDef(serialreader, serial_reader_task, osPriorityNormal, 0, 128);
+  osThreadDef(serialreader, serial_reader_task, osPriorityHigh, 0, 128);
   serialreaderHandle = osThreadCreate(osThread(serialreader), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -565,7 +576,7 @@ static void MX_ADC1_Init(void)
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SamplingTime = ADC_SAMPLETIME_41CYCLES_5;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-  {https://www.nih.gov/news-events/news-releases/researchers-propose-humidity-masks-may-lessen-severity-covid-19
+  {
     Error_Handler();
   }
   /** Configure Regular Channel
@@ -1059,8 +1070,9 @@ void serial_reader_task(void const * argument)
 	  	  }break;
 	  case 's':
 	  	  {
-		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
+
 	  	  stop_all();
+	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
 		  clear_rxBuffer();
 	  	  }break;
 	  case 'o':
@@ -1108,17 +1120,19 @@ void serial_reader_task(void const * argument)
 	  	  	//left finger position control
 	  	  	if(UART1_rxBuffer[1]=='p')
 	  	  		{
-	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
+	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
 	  	  		}
 	  	  	//left finger move forward at velocity
 	  	  	else if(UART1_rxBuffer[1]=='f')
 	  	  		{
-	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LF %d \n", cmd_val), 100);
+	  	  		move_lf(cmd_val);
+	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LF %d \n", cmd_val), 100);
 	  	  		}
 	  	  	//left finger move reverse at velocity
 	  	  	else if(UART1_rxBuffer[1]=='r')
 	  	  		{
-	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LR %d \n", cmd_val), 100);
+	  	  		move_lr(cmd_val);
+	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LR %d \n", cmd_val), 100);
 	  	  		}
 
 	  	  	clear_rxBuffer();
@@ -1152,7 +1166,7 @@ void status_update_timer(void const * argument)
   /* USER CODE BEGIN status_update_timer */
 
 	/* Serial Data Format
-	 *  M1-2_current, M1Pos, M2Pos, M3Pos, M4Pos, irsens_left[10], irsens_right[10]
+	 *  M1-2_current, M1Pos, M2Pos, RFPos, LFPos, irsens_left[10], irsens_right[10]
 	 *
 	 */
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
@@ -1166,7 +1180,7 @@ void status_update_timer(void const * argument)
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
-	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
+	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 100);
   /* USER CODE END status_update_timer */
 }
 
