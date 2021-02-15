@@ -1013,7 +1013,7 @@ void serial_reader_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-	  /*Valid serial commands
+	  /*		Valid serial commands
 	   * 	op000 - open finger
 	   * 	osXXX -  open finger with XXX speed
 	   * 	cp000 - close finger with position hold
@@ -1047,6 +1047,14 @@ void serial_reader_task(void const * argument)
 		  	  	  {
 				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cp  \n", 1), 100);
 		  	  	  }
+			  //close in speed control mode
+			  else if(UART1_rxBuffer[1]=='s')
+			  {
+				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+				  int cmd_val = atoi(val_ar);
+				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
+
+			  }
 		  clear_rxBuffer();
 	  	  }break;
 	  case 's':
@@ -1057,21 +1065,62 @@ void serial_reader_task(void const * argument)
 	  	  }break;
 	  case 'o':
 	  	  {
-	  	  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN \n", 1), 100);
+	  		// open upto fully open position
+	  		if(UART1_rxBuffer[1]=='p')
+	  			{
+	  			HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN \n", 1), 100);
+	  			}
+	  		// open with speed control
+	  		else if(UART1_rxBuffer[1]=='s')
+	  			{
+	  			char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+	  			int cmd_val = atoi(val_ar);
+	  			HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN SPEED %d \n", cmd_val), 100);
+	  			}
+
 	  	  clear_rxBuffer();
 	  	  }break;
 	  case 'r':
 	  	  {
 	  		char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 	  		int cmd_val = atoi(val_ar);
-	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
+	  	  	//right finger position control
+	  	  	if(UART1_rxBuffer[1]=='p')
+	  	  		{
+	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
+	  	  		}
+	  	  	//right finger move forward at velocity
+	  	  	else if(UART1_rxBuffer[1]=='f')
+	  	  		{
+	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RF %d \n", cmd_val), 100);
+	  	  		}
+	  	  	//right finger move reverse at velocity
+	  	  	else if(UART1_rxBuffer[1]=='r')
+	  	  		{
+	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RR %d \n", cmd_val), 100);
+	  	  		}
 	  	  clear_rxBuffer();
 	  	  }break;
 	   case 'l':
 	  	  {
 	  	  	char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 	  	  	int cmd_val = atoi(val_ar);
-	  	  	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
+	  	  	//left finger position control
+	  	  	if(UART1_rxBuffer[1]=='p')
+	  	  		{
+	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
+	  	  		}
+	  	  	//left finger move forward at velocity
+	  	  	else if(UART1_rxBuffer[1]=='f')
+	  	  		{
+	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LF %d \n", cmd_val), 100);
+	  	  		}
+	  	  	//left finger move reverse at velocity
+	  	  	else if(UART1_rxBuffer[1]=='r')
+	  	  		{
+	  	  		HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LR %d \n", cmd_val), 100);
+	  	  		}
+
 	  	  	clear_rxBuffer();
 	  	  }break;
 
@@ -1117,7 +1166,7 @@ void status_update_timer(void const * argument)
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
-	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
+	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 600);
   /* USER CODE END status_update_timer */
 }
 
