@@ -109,13 +109,22 @@ _Bool canMoveB_RF =1;
 
 int lfw = 0;
 int lrw = 0;
-int rfw =0;
-int rrw=0;
+int rfw = 0;
+int rrw = 0;
+int m12o = 0;
+int m12c = 0;
 
+// for LF & RF Max when extended ; Min when retracted
 uint32_t LFMaxPos = 2000;
 uint32_t LFMinPos = 500;
 uint32_t RFMaxPos = 2000;
 uint32_t RFMinPos = 500;
+// for M1 & M2 Min when extended ; Max when retracted
+uint32_t M1MinPos = 1000;
+uint32_t M1MaxPos = 2000;
+uint32_t M2MinPos = 1000;
+uint32_t M2MaxPos = 2000;
+
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -212,11 +221,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 }
 
-void open()
+void open(int pwmval)
 {
 
-	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-		    		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+	if((adc_value[3]>M1MinPos)||(adc_value[4]>M2MinPos))
+	{
+		osSemaphoreWait(BinSemHandle, osWaitForever);
+		m12o=1;
+		pwmval = scale_val(pwmval,0,100, 0, 2800);
+		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, pwmval);
+
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+		osSemaphoreRelease(BinSemHandle);
+		/*
 		    		 HAL_Delay(100);
 		    		 while(adc_value[2]<forcethres)
 		    		 {
@@ -227,10 +245,24 @@ void open()
 	 		  		  }
 		    	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 		    	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+		*/
+	}
 }
 
-void close()
+void close_vel(int pwmval)
 {
+
+	if((adc_value[3]<M1MaxPos)||(adc_value[4]<M2MaxPos))
+	{
+		osSemaphoreWait(BinSemHandle, osWaitForever);
+		m12c=1;
+		pwmval = scale_val(pwmval,0,100, 0, 2800);
+		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, pwmval);
+
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+		osSemaphoreRelease(BinSemHandle);
+		/*
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 		    		  HAL_Delay(100);
@@ -243,6 +275,8 @@ void close()
 		    		  }
 		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+		    		  */
+	}
 
 }
 
@@ -1168,7 +1202,8 @@ void serial_reader_task(void const * argument)
 			  {
 				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 				  int cmd_val = atoi(val_ar);
-				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
+				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
+				  close_vel(cmd_val);
 
 			  }
 		  clear_rxBuffer();
@@ -1192,7 +1227,8 @@ void serial_reader_task(void const * argument)
 	  			{
 	  			char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 	  			int cmd_val = atoi(val_ar);
-	  			HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN SPEED %d \n", cmd_val), 100);
+	  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN SPEED %d \n", cmd_val), 100);
+	  			open(cmd_val);
 	  			}
 
 	  	  clear_rxBuffer();
@@ -1299,6 +1335,27 @@ void pid_timer(void const * argument)
 			__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
 			__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
 			rrw=0;
+			osSemaphoreRelease(BinSemHandle);
+		}
+
+	if((adc_value[3]<M1MinPos) && (m12o==1) &&(adc_value[4]<M2MinPos))
+		{
+			osSemaphoreWait(BinSemHandle, osWaitForever);
+
+			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+			m12o=0;
+			osSemaphoreRelease(BinSemHandle);
+		}
+		else if((adc_value[3]>M1MaxPos) && (m12c==1) &&(adc_value[4]>M2MaxPos))
+		{
+			osSemaphoreWait(BinSemHandle, osWaitForever);
+
+			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+			m12c=0;
 			osSemaphoreRelease(BinSemHandle);
 		}
   /* USER CODE END pid_timer */
