@@ -1014,12 +1014,18 @@ void serial_reader_task(void const * argument)
   for(;;)
   {
 	  /*Valid serial commands
-	   * 	o - open finger
-	   * 	cp - close finger with position hold
-	   * 	s - stop
-	   * 	ccXXX -close finger with current hold
-	   *    lfXXX - left finger position roll
-	   *    rfXXX - right finger position roll
+	   * 	op000 - open finger
+	   * 	osXXX -  open finger with XXX speed
+	   * 	cp000 - close finger with position hold
+	   * 	ccXXX - close finger with current hold
+	   * 	csXXX - close finger with XXX speed
+	   *    lpXXX - left finger position roll
+	   *    lfXXX - move left finger forward with XXX speed
+	   *    lrXXX - move left finger reverse with XXX speed
+	   *    rpXXX - right finger position roll
+	   *    rfXXX - move right finger forward with XXX speed
+	   *    rrXXX - move right finger reverse with XXX speed
+	   *    s0000 - stop
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
 	  //close gripper
