@@ -118,18 +118,18 @@ int lPid = 0;
 int rPid = 0;
 
 // for LF & RF Max when extended ; Min when retracted
-uint32_t LFMaxPos = 3800;
-uint32_t LFMinPos = 200;
-uint32_t RFMaxPos = 2000;
-uint32_t RFMinPos = 500;
+int LFMaxPos = 3900;
+int LFMinPos = 200;
+int RFMaxPos = 3900;
+int RFMinPos = 200;
 // for M1 & M2 Min when extended ; Max when retracted
-uint32_t M1MinPos = 1000;
-uint32_t M1MaxPos = 2000;
-uint32_t M2MinPos = 1000;
-uint32_t M2MaxPos = 2000;
+int M1MinPos = 1000;
+int M1MaxPos = 2000;
+int M2MinPos = 1000;
+int M2MaxPos = 2000;
 
-uint32_t lPosDesired =0;
-uint32_t rPosDesired =0;
+int lPosDesired =0;
+int rPosDesired =0;
 int lPosDelta =10;
 int rPosDelta =10;
 
@@ -1457,7 +1457,7 @@ void status_update_timer(void const * argument)
 	//sprintf(MSG,"Data = %d \t end \r\n", RX1_Char);
 
 	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
-			adc_value[2], adc_value[3], adc_value[4], adc_value[5], adc_value[6],
+			adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
 				irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
