@@ -133,12 +133,20 @@ int rPosDesired =0;
 int lPosDelta =10;
 int rPosDelta =10;
 
+// L & R Finger PID parameters
+uint8_t pid_time_period = 10;
 double l_error_prev=0;
 double l_error_integral = 0;
 double l_Kp = 1.0;
 double l_Kd = 0.8;
 double l_Ki = 0.00001;
-uint8_t pid_time_period = 10;
+
+double r_error_prev=0;
+double r_error_integral = 0;
+double r_Kp = 1.0;
+double r_Kd = 0.8;
+double r_Ki = 0.00001;
+
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -297,6 +305,11 @@ void stop_lf()
 {
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2800);
+}
+void stop_rf()
+{
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 2800);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2800);
 }
 void stop_all()
 {/*Stops all motors*/
@@ -1407,12 +1420,12 @@ void pid_timer(void const * argument)
 		int error = lPosDesired - adc_value[6];
 		l_error_integral = l_error_integral + error;
 		int l_error_derivative = error  - l_error_prev;
-
+		// calculate control value
 		int l_ctrl   = (l_Kp * error) + ((l_Kd/pid_time_period)* l_error_derivative) + (l_Ki*l_error_integral*pid_time_period);
-
+		// ensure control value is within limits
 		l_ctrl = constrain(abs(l_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
 		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "PID L %d \t %d \t %d \t %d\n", lPosDesired, adc_value[6],error, l_ctrl), 100);
-
+		// move motors
 		if(error>lPosDelta)
 		{
 			//forward
@@ -1432,12 +1445,41 @@ void pid_timer(void const * argument)
 		//	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "REACHED L %d \t %d \t %d\n", lPosDesired, l_ctrl, error), 100);
 
 		}
-
-
-
+	}
+	//PID position control for RFinger
+	if(rPid==1)
+	{
+		// get the commanded position
+		// get current position
+		// calculate error
+		int error = rPosDesired - adc_value[5];
+		r_error_integral = r_error_integral + error;
+		int r_error_derivative = error  - r_error_prev;
 		// calculate control value
+		int r_ctrl   = (r_Kp * error) + ((r_Kd/pid_time_period)* r_error_derivative) + (r_Ki*r_error_integral*pid_time_period);
 		// ensure control value is within limits
+		r_ctrl = constrain(abs(r_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
+		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "PID L %d \t %d \t %d \t %d\n", lPosDesired, adc_value[6],error, l_ctrl), 100);
 		// move motors
+		if(error>rPosDelta)
+		{
+			//forward
+			move_rf(r_ctrl);
+			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "MOVE FWD %d\n", 1), 100);
+		}
+		else if(error<(-1*rPosDelta))
+		{
+			move_rb(r_ctrl);
+			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "MOVE BACK %d\n", 1), 100);
+		}
+		else
+		{
+			stop_rf();
+			r_error_integral = r_error_prev;
+			rPid=0;
+		//	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "REACHED L %d \t %d \t %d\n", lPosDesired, l_ctrl, error), 100);
+
+		}
 	}
   /* USER CODE END pid_timer */
 }
