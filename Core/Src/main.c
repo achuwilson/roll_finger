@@ -638,39 +638,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  /*
 
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
-	    if(RX1_Char == 'c') //close
-	    {
-	    		close();
-
-	    		  HAL_UART_Receive_IT(&huart1, &RX1_Char, 1);
-	    		  RX1_Char = 0x00;
-	    }
-	    else if(RX1_Char == 'o') //open
-	    {
-	    		open();
-
-	    	    HAL_UART_Receive_IT(&huart1, &RX1_Char, 1);
-	    	    RX1_Char = 0x00;
-	    }
-	    else if(RX1_Char == 'b')  //brake
-	    	    {
-	    	    	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-	    	    		  	 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-	    	    		  	  HAL_Delay(100);
-
-	    	    		  	HAL_UART_Receive_IT(&huart1, &RX1_Char, 1);
-	    	    		  	RX1_Char = 0x00;
-
-	    	    }
-	    else
-	    {	//clear buffer by reading out
-	    	HAL_UART_Receive_IT(&huart1, &RX1_Char, 1);
-	    		    	    		  	RX1_Char = 0x00;
-	    }
-	    */
 
     /* USER CODE END WHILE */
 
