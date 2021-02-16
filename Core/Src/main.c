@@ -118,8 +118,8 @@ int lPid = 0;
 int rPid = 0;
 
 // for LF & RF Max when extended ; Min when retracted
-uint32_t LFMaxPos = 2000;
-uint32_t LFMinPos = 500;
+uint32_t LFMaxPos = 3800;
+uint32_t LFMinPos = 200;
 uint32_t RFMaxPos = 2000;
 uint32_t RFMinPos = 500;
 // for M1 & M2 Min when extended ; Max when retracted
@@ -130,6 +130,15 @@ uint32_t M2MaxPos = 2000;
 
 uint32_t lPosDesired =0;
 uint32_t rPosDesired =0;
+int lPosDelta =10;
+int rPosDelta =10;
+
+double l_error_prev=0;
+double l_error_integral = 0;
+double l_Kp = 1.0;
+double l_Kd = 0.8;
+double l_Ki = 0.00001;
+uint8_t pid_time_period = 10;
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -284,7 +293,11 @@ void close_vel(int pwmval)
 	}
 
 }
-
+void stop_lf()
+{
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2800);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2800);
+}
 void stop_all()
 {/*Stops all motors*/
 
@@ -292,7 +305,7 @@ void stop_all()
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 
-	//set all PWMs to 0
+	//set all PWMs to 2800 - pin high - brake
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 2800);
@@ -428,6 +441,20 @@ int scale_val(int inval, int inmin, int inmax, int outmin, int outmax)
 
 	double slope = 1.0 * (outmax - outmin) / (inmax - inmin);
 	return outmin + slope * (inval - inmin);
+}
+
+int constrain(int inval, int minval, int maxval)
+{
+	if(inval<minval)
+	{
+		return minval;
+	}
+	else if(inval>maxval)
+	{
+		return maxval;
+	}
+	else
+		return inval;
 }
 /* USER CODE END 0 */
 
@@ -568,7 +595,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
   // PID timer runs at 100hz
-  osTimerStart(pidTimerHandle, 10);
+  osTimerStart(pidTimerHandle, pid_time_period);
   //status update timer runs at 100 hz
   osTimerStart(statusUpdateHandle, 10);
   /* USER CODE END RTOS_TIMERS */
@@ -1248,7 +1275,7 @@ void serial_reader_task(void const * argument)
 	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
 	  	  		//set the PID enable flag
 	  	  		rPid= 1;
-	  	  		rPosDesired = cmd_val;
+	  	  		rPosDesired =  scale_val(cmd_val,0,200,RFMinPos,RFMaxPos);
 	  	  		}
 	  	  	//right finger move forward at velocity
 	  	  	else if(UART1_rxBuffer[1]=='f')
@@ -1275,7 +1302,7 @@ void serial_reader_task(void const * argument)
 	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
 	  	  		// set the PID enable flag true
 	  	  		lPid = 1;
-	  	  		lPosDesired = cmd_val;
+	  	  		lPosDesired = scale_val(cmd_val,0,200,LFMinPos,LFMaxPos);
 	  	  		}
 	  	  	//left finger move forward at velocity
 	  	  	else if(UART1_rxBuffer[1]=='f')
@@ -1377,7 +1404,36 @@ void pid_timer(void const * argument)
 		// get the commanded position
 		// get current position
 		// calculate error
-		double error = lPosDesired - adc_value[6];
+		int error = lPosDesired - adc_value[6];
+		l_error_integral = l_error_integral + error;
+		int l_error_derivative = error  - l_error_prev;
+
+		int l_ctrl   = (l_Kp * error) + ((l_Kd/pid_time_period)* l_error_derivative) + (l_Ki*l_error_integral*pid_time_period);
+
+		l_ctrl = constrain(abs(l_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
+		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "PID L %d \t %d \t %d \t %d\n", lPosDesired, adc_value[6],error, l_ctrl), 100);
+
+		if(error>lPosDelta)
+		{
+			//forward
+			move_lf(l_ctrl);
+			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "MOVE FWD %d\n", 1), 100);
+		}
+		else if(error<(-1*lPosDelta))
+		{
+			move_lb(l_ctrl);
+			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "MOVE BACK %d\n", 1), 100);
+		}
+		else
+		{
+			stop_lf();
+			l_error_integral = l_error_prev;
+			lPid=0;
+		//	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "REACHED L %d \t %d \t %d\n", lPosDesired, l_ctrl, error), 100);
+
+		}
+
+
 
 		// calculate control value
 		// ensure control value is within limits
