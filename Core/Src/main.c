@@ -107,12 +107,15 @@ _Bool canMoveF_RF =1;
 _Bool canMoveB_RF =1;
 
 
-int lfw = 0;
 int lrw = 0;
+int lfw = 0;
 int rfw = 0;
 int rrw = 0;
 int m12o = 0;
 int m12c = 0;
+
+int lPid = 0;
+int rPid = 0;
 
 // for LF & RF Max when extended ; Min when retracted
 uint32_t LFMaxPos = 2000;
@@ -125,6 +128,8 @@ uint32_t M1MaxPos = 2000;
 uint32_t M2MinPos = 1000;
 uint32_t M2MaxPos = 2000;
 
+uint32_t lPosDesired =0;
+uint32_t rPosDesired =0;
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -288,10 +293,10 @@ void stop_all()
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 
 	//set all PWMs to 0
-	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
-  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2800);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2800);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 2800);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2800);
   	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
 
 }
@@ -1241,6 +1246,9 @@ void serial_reader_task(void const * argument)
 	  	  	if(UART1_rxBuffer[1]=='p')
 	  	  		{
 	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
+	  	  		//set the PID enable flag
+	  	  		rPid= 1;
+	  	  		rPosDesired = cmd_val;
 	  	  		}
 	  	  	//right finger move forward at velocity
 	  	  	else if(UART1_rxBuffer[1]=='f')
@@ -1252,6 +1260,7 @@ void serial_reader_task(void const * argument)
 	  	  	else if(UART1_rxBuffer[1]=='r')
 	  	  		{
 	  	  		move_rb(cmd_val);
+	  	  		rPid=0;
 	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RR %d \n", cmd_val), 100);
 	  	  		}
 	  	  clear_rxBuffer();
@@ -1264,6 +1273,9 @@ void serial_reader_task(void const * argument)
 	  	  	if(UART1_rxBuffer[1]=='p')
 	  	  		{
 	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
+	  	  		// set the PID enable flag true
+	  	  		lPid = 1;
+	  	  		lPosDesired = cmd_val;
 	  	  		}
 	  	  	//left finger move forward at velocity
 	  	  	else if(UART1_rxBuffer[1]=='f')
@@ -1275,6 +1287,7 @@ void serial_reader_task(void const * argument)
 	  	  	else if(UART1_rxBuffer[1]=='r')
 	  	  		{
 	  	  		move_lb(cmd_val);
+	  	  		lPid=0;
 	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LR %d \n", cmd_val), 100);
 	  	  		}
 
@@ -1358,6 +1371,18 @@ void pid_timer(void const * argument)
 			m12c=0;
 			osSemaphoreRelease(BinSemHandle);
 		}
+	//PID position control for LFinger
+	if(lPid==1)
+	{
+		// get the commanded position
+		// get current position
+		// calculate error
+		double error = lPosDesired - adc_value[6];
+
+		// calculate control value
+		// ensure control value is within limits
+		// move motors
+	}
   /* USER CODE END pid_timer */
 }
 
@@ -1381,7 +1406,8 @@ void status_update_timer(void const * argument)
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
-	HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 100);
+	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 100);
+	HAL_UART_Transmit_IT(&huart1, MSG, strlen(MSG));
 
   /* USER CODE END status_update_timer */
 }
