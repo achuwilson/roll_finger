@@ -301,17 +301,17 @@ void close_vel(int pwmval)
 	}
 
 }
-void stop_lf()
+void brake_lf()
 {
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2800);
 }
-void stop_rf()
+void brake_rf()
 {
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2800);
 }
-void stop_all()
+void brake_all()
 {/*Stops all motors*/
 
 	//reset the GPIO for open-close motors
@@ -1224,7 +1224,7 @@ void serial_reader_task(void const * argument)
 	  case 's':
 	  	  {
 
-	  	  stop_all();
+	  	  brake_all();
 	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
 		  clear_rxBuffer();
 	  	  }break;
@@ -1407,7 +1407,7 @@ void pid_timer(void const * argument)
 		}
 		else
 		{
-			stop_lf();
+			brake_lf();
 			l_error_integral = l_error_prev;
 			lPid=0;
 		//	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "REACHED L %d \t %d \t %d\n", lPosDesired, l_ctrl, error), 100);
@@ -1442,7 +1442,7 @@ void pid_timer(void const * argument)
 		}
 		else
 		{
-			stop_rf();
+			brake_rf();
 			r_error_integral = r_error_prev;
 			rPid=0;
 		//	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "REACHED L %d \t %d \t %d\n", lPosDesired, l_ctrl, error), 100);
