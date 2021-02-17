@@ -1229,11 +1229,11 @@ void serial_reader_task(void const * argument)
 	   *    rfXXX - move right finger forward with XXX speed
 	   *    rrXXX - move right finger reverse with XXX speed
 	   *    sl000 - stop left finger
-	   *    sf000 - stop right finger
+	   *    sr000 - stop right finger
 	   *    sg000 - stop gripper
 	   *	sXXXX - stop all
 	   *	bl000 - brake left finger
-	   *    bf000 - brake right finger
+	   *    br000 - brake right finger
 	   *    bg000 - brake gripper
 	   *	bXXXX - brake all
 	   *
