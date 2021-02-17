@@ -1236,6 +1236,7 @@ void serial_reader_task(void const * argument)
 	   *    br000 - brake right finger
 	   *    bg000 - brake gripper
 	   *	bXXXX - brake all
+	   *	R	  - Reset serial command queue
 	   *
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
@@ -1271,13 +1272,42 @@ void serial_reader_task(void const * argument)
 	  	  }break;
 	  case 's':
 	  	  {
-	  		if(UART1_rxBuffer[1]=='b')
+	  		if(UART1_rxBuffer[1]=='g')
 	  		{
-	  			brake_all(); // motor inputs shorted, canot be moved by hand
+	  			stop_gripper(); // motors inputs disconnected, can move by hand
+	  		}
+	  		else if(UART1_rxBuffer[1]=='l')
+	  		{
+	  			stop_lf();  // motors inputs disconnected, can move by hand
+	  		}
+	  		else if(UART1_rxBuffer[1]=='r')
+	  		{
+	  			stop_rf(); //motors inputs disconnected, can move by hand
 	  		}
 	  		else
 	  		{
-	  			stop_all();  // motors inputs disconnected, can move by hand
+	  			stop_all(); //motors inputs disconnected, can move by hand
+	  		}
+	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
+		  clear_rxBuffer();
+	  	  }break;
+	  case 'b':
+	  	  {
+	  		if(UART1_rxBuffer[1]=='g')
+	  		{
+	  			brake_gripper(); // motor inputs shorted, cannot move by hand
+	  		}
+	  		else if(UART1_rxBuffer[1]=='l')
+	  		{
+	  			brake_lf();  // motor inputs shorted, cannot move by hand
+	  		}
+	  		else if(UART1_rxBuffer[1]=='r')
+	  		{
+	  			brake_rf(); //motor inputs shorted, cannot move by hand
+	  		}
+	  		else
+	  		{
+	  			brake_all(); //motor inputs shorted, cannot move by hand
 	  		}
 	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
 		  clear_rxBuffer();
