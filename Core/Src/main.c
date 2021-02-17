@@ -315,15 +315,15 @@ void brake_all()
 {/*Stops all motors*/
 
 	//reset the GPIO for open-close motors
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 
 	//set all PWMs to 2800 - pin high - brake
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2800);
-  	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
+  	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 2800);
 
 }
 void stop_all()
@@ -1203,6 +1203,7 @@ void serial_reader_task(void const * argument)
 	   *    rpXXX - right finger position roll
 	   *    rfXXX - move right finger forward with XXX speed
 	   *    rrXXX - move right finger reverse with XXX speed
+	   *    sb000 - stop brake
 	   *    s0000 - stop
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
