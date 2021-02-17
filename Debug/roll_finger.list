@@ -1357,7 +1357,7 @@ void brake_rf()
 
 08000d38 <brake_all>:
 void brake_all()
-{/*Stops all motors*/
+{/*Stops all motors -  shorts motor terminals -  cannot move by hand*/
  8000d38:	b580      	push	{r7, lr}
  8000d3a:	af00      	add	r7, sp, #0
 
@@ -1410,7 +1410,7 @@ void brake_all()
 
 08000d94 <stop_all>:
 void stop_all()
-{/*Stops all motors*/
+{/*Stops all motors -  disconnects motor terminals -  can move by hand*/
  8000d94:	b580      	push	{r7, lr}
  8000d96:	af00      	add	r7, sp, #0
 
