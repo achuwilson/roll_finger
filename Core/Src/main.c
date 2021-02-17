@@ -311,7 +311,17 @@ void brake_rf()
 	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 2800);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 2800);
 }
+void stop_lf()
+{
+	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_1, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_2, 0);
+}
 
+void stop_rf()
+{
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
+  	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
+}
 void brake_gripper()
 {
 	//reset the GPIO for open-close motors
