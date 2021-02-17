@@ -458,7 +458,7 @@ void ir_led_off()
 
 void clear_rxBuffer(void)
 {
-	for (int i = 0; i < 6; ++i) // Using for loop we are initializing
+	for (int i = 0; i < 5; ++i) // Using for loop we are initializing
 	{
 		UART1_rxBuffer[i] = 0;
 	}
@@ -1386,11 +1386,26 @@ void serial_reader_task(void const * argument)
 	  	  	clear_rxBuffer();
 	  	  }break;
 
-	   default:
+	   /*default:
 		   clear_rxBuffer();
-
+*/
 	  }
-    osDelay(10);
+
+	  //Reset the serial buffer
+	  if((UART1_rxBuffer[0]=='R')||(UART1_rxBuffer[1]=='R')||(UART1_rxBuffer[2]=='R')||(UART1_rxBuffer[3]=='R')||(UART1_rxBuffer[4]=='R'))
+	  {
+		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RESET %d \n", 1), 100);
+		  __disable_irq();
+		  clear_rxBuffer();
+		  huart1.RxState= HAL_UART_STATE_READY;
+		  __enable_irq();
+		  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+	  }
+	  else
+	  {
+		  clear_rxBuffer();
+	  }
+    osDelay(5);
     //HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);
 
   }
@@ -1556,7 +1571,7 @@ void status_update_timer(void const * argument)
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
-	//HAL_UART_Transmit(&huart1, MSG, strlen(MSG), 100);
+
 	HAL_UART_Transmit_IT(&huart1, MSG, strlen(MSG));
 
   /* USER CODE END status_update_timer */
