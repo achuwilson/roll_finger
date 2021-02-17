@@ -1228,8 +1228,15 @@ void serial_reader_task(void const * argument)
 	   *    rpXXX - right finger position roll
 	   *    rfXXX - move right finger forward with XXX speed
 	   *    rrXXX - move right finger reverse with XXX speed
-	   *    sb000 - stop brake
-	   *    s0000 - stop
+	   *    sl000 - stop left finger
+	   *    sf000 - stop right finger
+	   *    sg000 - stop gripper
+	   *	sXXXX - stop all
+	   *	bl000 - brake left finger
+	   *    bf000 - brake right finger
+	   *    bg000 - brake gripper
+	   *	bXXXX - brake all
+	   *
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
 	  //close gripper
