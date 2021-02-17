@@ -1239,8 +1239,14 @@ void serial_reader_task(void const * argument)
 	  	  }break;
 	  case 's':
 	  	  {
-
-	  	  brake_all();
+	  		if(UART1_rxBuffer[1]=='b')
+	  		{
+	  			brake_all(); // motor inputs shorted, canot be moved by hand
+	  		}
+	  		else
+	  		{
+	  			stop_all();  // motors inputs disconnected, can move by hand
+	  		}
 	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
 		  clear_rxBuffer();
 	  	  }break;
