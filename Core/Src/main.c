@@ -319,10 +319,17 @@ void brake_gripper()
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 2800);
 }
+void stop_gripper()
+{
+	//reset the GPIO for open-close motors
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
+	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
+}
 void brake_all()
 {/*Stops all motors -  shorts motor terminals -  cannot move by hand*/
 
-	//reset the GPIO for open-close motors
+	//set the GPIO for open-close motors
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 
