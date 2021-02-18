@@ -126,26 +126,31 @@ int M1MaxPos = 2000;
 int M2MinPos = 1000;
 int M2MaxPos = 2000;
 
+// Desired positions & currents
 int lPosDesired =0;
 int rPosDesired =0;
-int lPosDelta =10;
-int rPosDelta =10;
+int gCurDesired = 0;
 
-// L & R Finger PID parameters
+// Delta position & currents allowed
+int lPosDelta = 10;
+int rPosDelta = 10;
+int gCurDelta = 10;
+
+// Motor control PID loop time period in milliseconds
+// with t = 10, PID runs at 100 Hz
 uint8_t pid_time_period = 10;
 
+// L & R Finger PID parameters
 double l_error_prev=0;
 double l_error_integral = 0;
 double l_Kp = 1.0;
 double l_Kd = 0.8;
 double l_Ki = 0.00001;
-
 double r_error_prev=0;
 double r_error_integral = 0;
 double r_Kp = 1.0;
 double r_Kd = 0.8;
 double r_Ki = 0.00001;
-
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -1251,7 +1256,8 @@ void serial_reader_task(void const * argument)
 				  // create the NULL terminated character array with the values
 				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 				  int cmd_val = atoi(val_ar);
-				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cc %d \n", cmd_val), 100);
+				  gPid = 1;
+				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cc %d \n", cmd_val), 100);
 			  	  }
 			  //close in position hold mode
 			  else if(UART1_rxBuffer[1]=='p')
