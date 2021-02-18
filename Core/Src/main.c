@@ -242,7 +242,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 }
 
-void open(int pwmval)
+void open_gripper(int pwmval)
 {
 
 	if((adc_value[3]>M1MinPos)||(adc_value[4]>M2MinPos))
@@ -270,7 +270,7 @@ void open(int pwmval)
 	}
 }
 
-void close_vel(int pwmval)
+void close_gripper(int pwmval)
 {
 
 	if((adc_value[3]<M1MaxPos)||(adc_value[4]<M2MaxPos))
@@ -1264,7 +1264,7 @@ void serial_reader_task(void const * argument)
 				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 				  int cmd_val = atoi(val_ar);
 				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
-				  close_vel(cmd_val);
+				  close_gripper(cmd_val);
 
 			  }
 		  clear_rxBuffer();
@@ -1324,7 +1324,7 @@ void serial_reader_task(void const * argument)
 	  			char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 	  			int cmd_val = atoi(val_ar);
 	  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN SPEED %d \n", cmd_val), 100);
-	  			open(cmd_val);
+	  			open_gripper(cmd_val);
 	  			}
 
 	  	  clear_rxBuffer();

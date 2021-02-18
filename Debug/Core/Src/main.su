@@ -2,8 +2,8 @@ main.c:156:6:make_pretty_colors	40	static
 main.c:189:6:lightupLED	32	static
 main.c:216:6:lightupLED2	32	static
 main.c:238:6:HAL_UART_RxCpltCallback	16	static
-main.c:245:6:open	24	static
-main.c:273:6:close_vel	24	static
+main.c:245:6:open_gripper	24	static
+main.c:273:6:close_gripper	24	static
 main.c:303:6:brake_lf	4	static
 main.c:308:6:brake_rf	4	static
 main.c:313:6:stop_lf	4	static

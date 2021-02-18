@@ -39,11 +39,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  17 .debug_line   00010fc1  00000000  00000000  000598b3  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    00097e85  00000000  00000000  0006a874  2**0
+ 18 .debug_str    00097e91  00000000  00000000  0006a874  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  001026f9  2**0
+ 19 .comment      0000007b  00000000  00000000  00102705  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00005ce0  00000000  00000000  00102774  2**2
+ 20 .debug_frame  00005ce0  00000000  00000000  00102780  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -1147,9 +1147,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  8000bc0:	2000090c 	.word	0x2000090c
  8000bc4:	2000197c 	.word	0x2000197c
 
-08000bc8 <open>:
+08000bc8 <open_gripper>:
 
-void open(int pwmval)
+void open_gripper(int pwmval)
 {
  8000bc8:	b580      	push	{r7, lr}
  8000bca:	b084      	sub	sp, #16
@@ -1157,27 +1157,27 @@ void open(int pwmval)
  8000bce:	6078      	str	r0, [r7, #4]
 
 	if((adc_value[3]>M1MinPos)||(adc_value[4]>M2MinPos))
- 8000bd0:	4b1b      	ldr	r3, [pc, #108]	; (8000c40 <open+0x78>)
+ 8000bd0:	4b1b      	ldr	r3, [pc, #108]	; (8000c40 <open_gripper+0x78>)
  8000bd2:	68db      	ldr	r3, [r3, #12]
- 8000bd4:	4a1b      	ldr	r2, [pc, #108]	; (8000c44 <open+0x7c>)
+ 8000bd4:	4a1b      	ldr	r2, [pc, #108]	; (8000c44 <open_gripper+0x7c>)
  8000bd6:	6812      	ldr	r2, [r2, #0]
  8000bd8:	4293      	cmp	r3, r2
- 8000bda:	d805      	bhi.n	8000be8 <open+0x20>
- 8000bdc:	4b18      	ldr	r3, [pc, #96]	; (8000c40 <open+0x78>)
+ 8000bda:	d805      	bhi.n	8000be8 <open_gripper+0x20>
+ 8000bdc:	4b18      	ldr	r3, [pc, #96]	; (8000c40 <open_gripper+0x78>)
  8000bde:	691b      	ldr	r3, [r3, #16]
- 8000be0:	4a19      	ldr	r2, [pc, #100]	; (8000c48 <open+0x80>)
+ 8000be0:	4a19      	ldr	r2, [pc, #100]	; (8000c48 <open_gripper+0x80>)
  8000be2:	6812      	ldr	r2, [r2, #0]
  8000be4:	4293      	cmp	r3, r2
- 8000be6:	d926      	bls.n	8000c36 <open+0x6e>
+ 8000be6:	d926      	bls.n	8000c36 <open_gripper+0x6e>
 	{
 		osSemaphoreWait(BinSemHandle, osWaitForever);
- 8000be8:	4b18      	ldr	r3, [pc, #96]	; (8000c4c <open+0x84>)
+ 8000be8:	4b18      	ldr	r3, [pc, #96]	; (8000c4c <open_gripper+0x84>)
  8000bea:	681b      	ldr	r3, [r3, #0]
  8000bec:	f04f 31ff 	mov.w	r1, #4294967295	; 0xffffffff
  8000bf0:	4618      	mov	r0, r3
  8000bf2:	f005 ff63 	bl	8006abc <osSemaphoreWait>
 		mgo=1;
- 8000bf6:	4b16      	ldr	r3, [pc, #88]	; (8000c50 <open+0x88>)
+ 8000bf6:	4b16      	ldr	r3, [pc, #88]	; (8000c50 <open_gripper+0x88>)
  8000bf8:	2201      	movs	r2, #1
  8000bfa:	601a      	str	r2, [r3, #0]
 		pwmval = scale_val(pwmval,0,100, 0, 2800);
@@ -1190,7 +1190,7 @@ void open(int pwmval)
  8000c0a:	f000 fabf 	bl	800118c <scale_val>
  8000c0e:	6078      	str	r0, [r7, #4]
 		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, pwmval);
- 8000c10:	4b10      	ldr	r3, [pc, #64]	; (8000c54 <open+0x8c>)
+ 8000c10:	4b10      	ldr	r3, [pc, #64]	; (8000c54 <open_gripper+0x8c>)
  8000c12:	681b      	ldr	r3, [r3, #0]
  8000c14:	687a      	ldr	r2, [r7, #4]
  8000c16:	635a      	str	r2, [r3, #52]	; 0x34
@@ -1198,15 +1198,15 @@ void open(int pwmval)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
  8000c18:	2201      	movs	r2, #1
  8000c1a:	2110      	movs	r1, #16
- 8000c1c:	480e      	ldr	r0, [pc, #56]	; (8000c58 <open+0x90>)
+ 8000c1c:	480e      	ldr	r0, [pc, #56]	; (8000c58 <open_gripper+0x90>)
  8000c1e:	f003 fc8f 	bl	8004540 <HAL_GPIO_WritePin>
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
  8000c22:	2200      	movs	r2, #0
  8000c24:	2108      	movs	r1, #8
- 8000c26:	480c      	ldr	r0, [pc, #48]	; (8000c58 <open+0x90>)
+ 8000c26:	480c      	ldr	r0, [pc, #48]	; (8000c58 <open_gripper+0x90>)
  8000c28:	f003 fc8a 	bl	8004540 <HAL_GPIO_WritePin>
 		osSemaphoreRelease(BinSemHandle);
- 8000c2c:	4b07      	ldr	r3, [pc, #28]	; (8000c4c <open+0x84>)
+ 8000c2c:	4b07      	ldr	r3, [pc, #28]	; (8000c4c <open_gripper+0x84>)
  8000c2e:	681b      	ldr	r3, [r3, #0]
  8000c30:	4618      	mov	r0, r3
  8000c32:	f005 ff91 	bl	8006b58 <osSemaphoreRelease>
@@ -1229,9 +1229,9 @@ void open(int pwmval)
  8000c54:	20001a24 	.word	0x20001a24
  8000c58:	40010c00 	.word	0x40010c00
 
-08000c5c <close_vel>:
+08000c5c <close_gripper>:
 
-void close_vel(int pwmval)
+void close_gripper(int pwmval)
 {
  8000c5c:	b580      	push	{r7, lr}
  8000c5e:	b084      	sub	sp, #16
@@ -1239,27 +1239,27 @@ void close_vel(int pwmval)
  8000c62:	6078      	str	r0, [r7, #4]
 
 	if((adc_value[3]<M1MaxPos)||(adc_value[4]<M2MaxPos))
- 8000c64:	4b1b      	ldr	r3, [pc, #108]	; (8000cd4 <close_vel+0x78>)
+ 8000c64:	4b1b      	ldr	r3, [pc, #108]	; (8000cd4 <close_gripper+0x78>)
  8000c66:	68db      	ldr	r3, [r3, #12]
- 8000c68:	4a1b      	ldr	r2, [pc, #108]	; (8000cd8 <close_vel+0x7c>)
+ 8000c68:	4a1b      	ldr	r2, [pc, #108]	; (8000cd8 <close_gripper+0x7c>)
  8000c6a:	6812      	ldr	r2, [r2, #0]
  8000c6c:	4293      	cmp	r3, r2
- 8000c6e:	d305      	bcc.n	8000c7c <close_vel+0x20>
- 8000c70:	4b18      	ldr	r3, [pc, #96]	; (8000cd4 <close_vel+0x78>)
+ 8000c6e:	d305      	bcc.n	8000c7c <close_gripper+0x20>
+ 8000c70:	4b18      	ldr	r3, [pc, #96]	; (8000cd4 <close_gripper+0x78>)
  8000c72:	691b      	ldr	r3, [r3, #16]
- 8000c74:	4a19      	ldr	r2, [pc, #100]	; (8000cdc <close_vel+0x80>)
+ 8000c74:	4a19      	ldr	r2, [pc, #100]	; (8000cdc <close_gripper+0x80>)
  8000c76:	6812      	ldr	r2, [r2, #0]
  8000c78:	4293      	cmp	r3, r2
- 8000c7a:	d226      	bcs.n	8000cca <close_vel+0x6e>
+ 8000c7a:	d226      	bcs.n	8000cca <close_gripper+0x6e>
 	{
 		osSemaphoreWait(BinSemHandle, osWaitForever);
- 8000c7c:	4b18      	ldr	r3, [pc, #96]	; (8000ce0 <close_vel+0x84>)
+ 8000c7c:	4b18      	ldr	r3, [pc, #96]	; (8000ce0 <close_gripper+0x84>)
  8000c7e:	681b      	ldr	r3, [r3, #0]
  8000c80:	f04f 31ff 	mov.w	r1, #4294967295	; 0xffffffff
  8000c84:	4618      	mov	r0, r3
  8000c86:	f005 ff19 	bl	8006abc <osSemaphoreWait>
 		mgc=1;
- 8000c8a:	4b16      	ldr	r3, [pc, #88]	; (8000ce4 <close_vel+0x88>)
+ 8000c8a:	4b16      	ldr	r3, [pc, #88]	; (8000ce4 <close_gripper+0x88>)
  8000c8c:	2201      	movs	r2, #1
  8000c8e:	601a      	str	r2, [r3, #0]
 		pwmval = scale_val(pwmval,0,100, 0, 2800);
@@ -1272,7 +1272,7 @@ void close_vel(int pwmval)
  8000c9e:	f000 fa75 	bl	800118c <scale_val>
  8000ca2:	6078      	str	r0, [r7, #4]
 		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, pwmval);
- 8000ca4:	4b10      	ldr	r3, [pc, #64]	; (8000ce8 <close_vel+0x8c>)
+ 8000ca4:	4b10      	ldr	r3, [pc, #64]	; (8000ce8 <close_gripper+0x8c>)
  8000ca6:	681b      	ldr	r3, [r3, #0]
  8000ca8:	687a      	ldr	r2, [r7, #4]
  8000caa:	635a      	str	r2, [r3, #52]	; 0x34
@@ -1280,15 +1280,15 @@ void close_vel(int pwmval)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
  8000cac:	2201      	movs	r2, #1
  8000cae:	2108      	movs	r1, #8
- 8000cb0:	480e      	ldr	r0, [pc, #56]	; (8000cec <close_vel+0x90>)
+ 8000cb0:	480e      	ldr	r0, [pc, #56]	; (8000cec <close_gripper+0x90>)
  8000cb2:	f003 fc45 	bl	8004540 <HAL_GPIO_WritePin>
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
  8000cb6:	2200      	movs	r2, #0
  8000cb8:	2110      	movs	r1, #16
- 8000cba:	480c      	ldr	r0, [pc, #48]	; (8000cec <close_vel+0x90>)
+ 8000cba:	480c      	ldr	r0, [pc, #48]	; (8000cec <close_gripper+0x90>)
  8000cbc:	f003 fc40 	bl	8004540 <HAL_GPIO_WritePin>
 		osSemaphoreRelease(BinSemHandle);
- 8000cc0:	4b07      	ldr	r3, [pc, #28]	; (8000ce0 <close_vel+0x84>)
+ 8000cc0:	4b07      	ldr	r3, [pc, #28]	; (8000ce0 <close_gripper+0x84>)
  8000cc2:	681b      	ldr	r3, [r3, #0]
  8000cc4:	4618      	mov	r0, r3
  8000cc6:	f005 ff47 	bl	8006b58 <osSemaphoreRelease>
@@ -3946,9 +3946,9 @@ void serial_reader_task(void const * argument)
  8001d16:	f007 fea1 	bl	8009a5c <atoi>
  8001d1a:	6238      	str	r0, [r7, #32]
 				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
-				  close_vel(cmd_val);
+				  close_gripper(cmd_val);
  8001d1c:	6a38      	ldr	r0, [r7, #32]
- 8001d1e:	f7fe ff9d 	bl	8000c5c <close_vel>
+ 8001d1e:	f7fe ff9d 	bl	8000c5c <close_gripper>
 
 			  }
 		  clear_rxBuffer();
@@ -4086,9 +4086,9 @@ void serial_reader_task(void const * argument)
  8001dd6:	f007 fe41 	bl	8009a5c <atoi>
  8001dda:	62b8      	str	r0, [r7, #40]	; 0x28
 	  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN SPEED %d \n", cmd_val), 100);
-	  			open(cmd_val);
+	  			open_gripper(cmd_val);
  8001ddc:	6ab8      	ldr	r0, [r7, #40]	; 0x28
- 8001dde:	f7fe fef3 	bl	8000bc8 <open>
+ 8001dde:	f7fe fef3 	bl	8000bc8 <open_gripper>
 	  			}
 
 	  	  clear_rxBuffer();
