@@ -86,7 +86,7 @@ void status_update_timer(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint8_t RX1_Char = 0x00;
+// array to hold values of ADC input ports
 uint32_t adc_value[7];
 
 int forcethres=20;
@@ -100,22 +100,20 @@ struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
 char buffer[30];
 float MSG[150];
 char UART1_rxBuffer[5] = {0};
-//motor moving status
-_Bool canMoveF_LF=1;
-_Bool canMoveB_LF=1;
-_Bool canMoveF_RF =1;
-_Bool canMoveB_RF =1;
 
+//flags that are set to indicate whether motors  are
+// moving and their direction.
+int lrw = 0; // LEFT REVERSE
+int lfw = 0; // LEFT FORWARD
+int rfw = 0; // RIGHT FORWARD
+int rrw = 0; // RIGHT REVERSE
+int mgo = 0; // GRIPPER OPENING
+int mgc = 0; // GRIPPER CLOSING
 
-int lrw = 0;
-int lfw = 0;
-int rfw = 0;
-int rrw = 0;
-int m12o = 0;
-int m12c = 0;
-
+//flags to enable/disable PID loops
 int lPid = 0;
 int rPid = 0;
+int gPid = 0;
 
 // for LF & RF Max when extended ; Min when retracted
 int LFMaxPos = 3900;
@@ -135,6 +133,7 @@ int rPosDelta =10;
 
 // L & R Finger PID parameters
 uint8_t pid_time_period = 10;
+
 double l_error_prev=0;
 double l_error_integral = 0;
 double l_Kp = 1.0;
@@ -249,7 +248,7 @@ void open(int pwmval)
 	if((adc_value[3]>M1MinPos)||(adc_value[4]>M2MinPos))
 	{
 		osSemaphoreWait(BinSemHandle, osWaitForever);
-		m12o=1;
+		mgo=1;
 		pwmval = scale_val(pwmval,0,100, 0, 2800);
 		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, pwmval);
 
@@ -277,7 +276,7 @@ void close_vel(int pwmval)
 	if((adc_value[3]<M1MaxPos)||(adc_value[4]<M2MaxPos))
 	{
 		osSemaphoreWait(BinSemHandle, osWaitForever);
-		m12c=1;
+		mgc=1;
 		pwmval = scale_val(pwmval,0,100, 0, 2800);
 		__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, pwmval);
 
@@ -1458,24 +1457,24 @@ void pid_timer(void const * argument)
 			osSemaphoreRelease(BinSemHandle);
 		}
 
-	if((adc_value[3]<M1MinPos) && (m12o==1) &&(adc_value[4]<M2MinPos))
+	if((adc_value[3]<M1MinPos) && (mgo==1) &&(adc_value[4]<M2MinPos))
 		{
 			osSemaphoreWait(BinSemHandle, osWaitForever);
 
 			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-			m12o=0;
+			mgo=0;
 			osSemaphoreRelease(BinSemHandle);
 		}
-		else if((adc_value[3]>M1MaxPos) && (m12c==1) &&(adc_value[4]>M2MaxPos))
+		else if((adc_value[3]>M1MaxPos) && (mgc==1) &&(adc_value[4]>M2MaxPos))
 		{
 			osSemaphoreWait(BinSemHandle, osWaitForever);
 
 			__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-			m12c=0;
+			mgc=0;
 			osSemaphoreRelease(BinSemHandle);
 		}
 	//PID position control for LFinger
@@ -1563,7 +1562,6 @@ void status_update_timer(void const * argument)
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
 	//sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",
 	//		irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
-	//sprintf(MSG,"Data = %d \t end \r\n", RX1_Char);
 
 	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
 			adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
