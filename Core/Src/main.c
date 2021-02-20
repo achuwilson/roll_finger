@@ -1182,7 +1182,7 @@ void adc_reader_task(void const * argument)
 	  		  set_mux_fr(i);
 
 	  		  //small delay
-	  		  HAL_Delay(1);
+	  		  osDelay(1);
 
 	  		  // get initial readings
 	  		  data_fl_noise = adc_value[0];
@@ -1191,7 +1191,7 @@ void adc_reader_task(void const * argument)
 	  		  // set IR on
 	  		  ir_led_on();
 	  		  //small delay
-	  		  HAL_Delay(1);
+	  		  osDelay(1);
 
 	  		  // get second readings
 	  		  data_fl = adc_value[0];

@@ -3725,9 +3725,9 @@ void adc_reader_task(void const * argument)
  8001b7e:	f7ff facd 	bl	800111c <set_mux_fr>
 
 	  		  //small delay
-	  		  HAL_Delay(1);
+	  		  osDelay(1);
  8001b82:	2001      	movs	r0, #1
- 8001b84:	f001 fc44 	bl	8003410 <HAL_Delay>
+ 8001b84:	f004 fefd 	bl	8006982 <osDelay>
 
 	  		  // get initial readings
 	  		  data_fl_noise = adc_value[0];
@@ -3747,9 +3747,9 @@ void adc_reader_task(void const * argument)
 	  		  ir_led_on();
  8001b9c:	f7ff fa58 	bl	8001050 <ir_led_on>
 	  		  //small delay
-	  		  HAL_Delay(1);
+	  		  osDelay(1);
  8001ba0:	2001      	movs	r0, #1
- 8001ba2:	f001 fc35 	bl	8003410 <HAL_Delay>
+ 8001ba2:	f004 feee 	bl	8006982 <osDelay>
 
 	  		  // get second readings
 	  		  data_fl = adc_value[0];
