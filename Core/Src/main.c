@@ -154,6 +154,8 @@ double r_Ki = 0.00001;
 
 // gripper motor params
 int gForceThres = 0;
+int gTimeOut = 10000; // 10 second timeout for gripper to reach threshold current
+int startTick = 0;
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -1270,6 +1272,8 @@ void serial_reader_task(void const * argument)
 				  gForceThres = atoi(val_ar);
 				  gPid = 2;
 				  close_gripper(100);
+				  startTick = HAL_GetTick();
+
 		  	  	  }
 			  //close in speed control mode
 			  else if(UART1_rxBuffer[1]=='s')
@@ -1278,6 +1282,8 @@ void serial_reader_task(void const * argument)
 				  int cmd_val = atoi(val_ar);
 				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
 				  close_gripper(cmd_val);
+				  gPid = 3;
+				  startTick = HAL_GetTick();
 
 			  }
 		  clear_rxBuffer();
@@ -1565,15 +1571,24 @@ void pid_timer(void const * argument)
 	// control of gripper motors
 	if(gPid==2)
 	{
+		// check for current
 		if(adc_value[2]>gForceThres)
-		{
-			osDelay(5);
+		{	// verify again after a short delay
+			osDelay(2);
 			if(adc_value[2]>gForceThres)
 			{
 				// brake
 				brake_gripper();
 				gPid = 0;
 			}
+
+		}
+		// check for timeout
+		if( abs(HAL_GetTick()-startTick)>gTimeOut)
+		{
+			// brake
+			brake_gripper();
+			gPid = 0;
 
 		}
 	}
@@ -1601,6 +1616,7 @@ void status_update_timer(void const * argument)
 
 
 	HAL_UART_Transmit_IT(&huart1, MSG, strlen(MSG));
+
 
   /* USER CODE END status_update_timer */
 }
