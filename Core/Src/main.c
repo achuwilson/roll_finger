@@ -121,10 +121,10 @@ int LFMinPos = 200;
 int RFMaxPos = 3900;
 int RFMinPos = 200;
 // for M1 & M2 Min when extended ; Max when retracted
-int M1MinPos = 1000;
-int M1MaxPos = 2000;
-int M2MinPos = 1000;
-int M2MaxPos = 2000;
+int M1MinPos = 430;
+int M1MaxPos = 3850;
+int M2MinPos = 380;
+int M2MaxPos = 3850;
 
 // Desired positions & currents
 int lPosDesired =0;
@@ -151,6 +151,9 @@ double r_error_integral = 0;
 double r_Kp = 1.0;
 double r_Kd = 0.8;
 double r_Ki = 0.00001;
+
+// gripper motor params
+int gForceThres = 0;
 
 // IR proximity sensors
   int num_irsensors = 10;
@@ -1263,6 +1266,10 @@ void serial_reader_task(void const * argument)
 			  else if(UART1_rxBuffer[1]=='p')
 		  	  	  {
 				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cp  \n", 1), 100);
+				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
+				  gForceThres = atoi(val_ar);
+				  gPid = 2;
+				  close_gripper(100);
 		  	  	  }
 			  //close in speed control mode
 			  else if(UART1_rxBuffer[1]=='s')
@@ -1322,7 +1329,8 @@ void serial_reader_task(void const * argument)
 	  		// open upto fully open position
 	  		if(UART1_rxBuffer[1]=='p')
 	  			{
-	  			HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN \n", 1), 100);
+	  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN \n", 1), 100);
+	  			open_gripper(100);
 	  			}
 	  		// open with speed control
 	  		else if(UART1_rxBuffer[1]=='s')
@@ -1550,6 +1558,22 @@ void pid_timer(void const * argument)
 			r_error_integral = r_error_prev;
 			rPid=0;
 		//	HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "REACHED L %d \t %d \t %d\n", lPosDesired, l_ctrl, error), 100);
+
+		}
+	}
+
+	// control of gripper motors
+	if(gPid==2)
+	{
+		if(adc_value[2]>gForceThres)
+		{
+			osDelay(5);
+			if(adc_value[2]>gForceThres)
+			{
+				// brake
+				brake_gripper();
+				gPid = 0;
+			}
 
 		}
 	}
