@@ -1281,8 +1281,8 @@ void serial_reader_task(void const * argument)
 				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 				  int cmd_val = atoi(val_ar);
 				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
-				  close_gripper(cmd_val);
 				  gPid = 3;
+				  close_gripper(cmd_val);
 				  startTick = HAL_GetTick();
 
 			  }
@@ -1589,8 +1589,17 @@ void pid_timer(void const * argument)
 			// brake
 			brake_gripper();
 			gPid = 0;
-
 		}
+	}
+	 if(gPid==3)
+	{
+		// check for timeout
+				if( abs(HAL_GetTick()-startTick)>gTimeOut)
+				{
+					// brake
+					brake_gripper();
+					gPid = 0;
+				}
 	}
   /* USER CODE END pid_timer */
 }
