@@ -7,23 +7,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
   1 .text         0000a420  08000110  08000110  00010110  2**4
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  2 .rodata       00000248  0800a530  0800a530  0001a530  2**2
+  2 .rodata       00000244  0800a530  0800a530  0001a530  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
-  3 .ARM.extab    00000000  0800a778  0800a778  00020248  2**0
+  3 .ARM.extab    00000000  0800a774  0800a774  00020248  2**0
                   CONTENTS
-  4 .ARM          00000000  0800a778  0800a778  00020248  2**0
+  4 .ARM          00000000  0800a774  0800a774  00020248  2**0
                   CONTENTS
-  5 .preinit_array 00000000  0800a778  0800a778  00020248  2**0
+  5 .preinit_array 00000000  0800a774  0800a774  00020248  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  6 .init_array   00000004  0800a778  0800a778  0001a778  2**2
+  6 .init_array   00000004  0800a774  0800a774  0001a774  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  7 .fini_array   00000004  0800a77c  0800a77c  0001a77c  2**2
+  7 .fini_array   00000004  0800a778  0800a778  0001a778  2**2
                   CONTENTS, ALLOC, LOAD, DATA
-  8 .data         00000248  20000000  0800a780  00020000  2**3
+  8 .data         00000248  20000000  0800a77c  00020000  2**3
                   CONTENTS, ALLOC, LOAD, DATA
-  9 .bss          00001d34  20000248  0800a9c8  00020248  2**3
+  9 .bss          00001d34  20000248  0800a9c4  00020248  2**3
                   ALLOC
- 10 ._user_heap_stack 00000604  20001f7c  0800a9c8  00021f7c  2**0
+ 10 ._user_heap_stack 00000604  20001f7c  0800a9c4  00021f7c  2**0
                   ALLOC
  11 .ARM.attributes 00000029  00000000  00000000  00020248  2**0
                   CONTENTS, READONLY
@@ -5175,7 +5175,7 @@ void status_update_timer(void const * argument)
 	//sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",
 	//		irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
 
-	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
+	sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
  8002594:	4b49      	ldr	r3, [pc, #292]	; (80026bc <status_update_timer+0x130>)
  8002596:	689b      	ldr	r3, [r3, #8]
  8002598:	64bb      	str	r3, [r7, #72]	; 0x48
@@ -5188,7 +5188,7 @@ void status_update_timer(void const * argument)
 			adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
  80025a6:	4b45      	ldr	r3, [pc, #276]	; (80026bc <status_update_timer+0x130>)
  80025a8:	695b      	ldr	r3, [r3, #20]
-	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
+	sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
  80025aa:	4618      	mov	r0, r3
  80025ac:	4b44      	ldr	r3, [pc, #272]	; (80026c0 <status_update_timer+0x134>)
  80025ae:	6819      	ldr	r1, [r3, #0]
@@ -5202,7 +5202,7 @@ void status_update_timer(void const * argument)
 			adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
  80025c0:	4b3e      	ldr	r3, [pc, #248]	; (80026bc <status_update_timer+0x130>)
  80025c2:	699b      	ldr	r3, [r3, #24]
-	sprintf(MSG, "%d \t%d \t%d \t%d \t%d \t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t \r\n",
+	sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
  80025c4:	4618      	mov	r0, r3
  80025c6:	4b40      	ldr	r3, [pc, #256]	; (80026c8 <status_update_timer+0x13c>)
  80025c8:	6819      	ldr	r1, [r3, #0]
@@ -7414,7 +7414,7 @@ void ws2812_refresh(const struct led_channel_info *channels, GPIO_TypeDef *gpio_
  80032f6:	bf00      	nop
  80032f8:	2000096c 	.word	0x2000096c
  80032fc:	20000970 	.word	0x20000970
- 8003300:	0800a628 	.word	0x0800a628
+ 8003300:	0800a624 	.word	0x0800a624
  8003304:	20001eec 	.word	0x20001eec
  8003308:	40020000 	.word	0x40020000
             break;
@@ -7604,7 +7604,7 @@ LoopFillZerobss:
   bx lr
  8003412:	4770      	bx	lr
   ldr r3, =_sidata
- 8003414:	0800a780 	.word	0x0800a780
+ 8003414:	0800a77c 	.word	0x0800a77c
   ldr r0, =_sdata
  8003418:	20000000 	.word	0x20000000
   ldr r3, =_edata
@@ -12182,7 +12182,7 @@ if (((RCC_ClkInitStruct->ClockType) & RCC_CLOCKTYPE_PCLK1) == RCC_CLOCKTYPE_PCLK
  8004cfa:	bf00      	nop
  8004cfc:	40022000 	.word	0x40022000
  8004d00:	40021000 	.word	0x40021000
- 8004d04:	0800a610 	.word	0x0800a610
+ 8004d04:	0800a60c 	.word	0x0800a60c
  8004d08:	20000068 	.word	0x20000068
  8004d0c:	2000006c 	.word	0x2000006c
 
@@ -12331,8 +12331,8 @@ uint32_t HAL_RCC_GetSysClockFreq(void)
  8004dba:	bc90      	pop	{r4, r7}
  8004dbc:	4770      	bx	lr
  8004dbe:	bf00      	nop
- 8004dc0:	0800a5e0 	.word	0x0800a5e0
- 8004dc4:	0800a5f0 	.word	0x0800a5f0
+ 8004dc0:	0800a5dc 	.word	0x0800a5dc
+ 8004dc4:	0800a5ec 	.word	0x0800a5ec
  8004dc8:	40021000 	.word	0x40021000
  8004dcc:	007a1200 	.word	0x007a1200
  8004dd0:	003d0900 	.word	0x003d0900
@@ -12380,7 +12380,7 @@ uint32_t HAL_RCC_GetPCLK1Freq(void)
  8004e04:	4618      	mov	r0, r3
  8004e06:	bd80      	pop	{r7, pc}
  8004e08:	40021000 	.word	0x40021000
- 8004e0c:	0800a620 	.word	0x0800a620
+ 8004e0c:	0800a61c 	.word	0x0800a61c
 
 08004e10 <HAL_RCC_GetPCLK2Freq>:
   * @note   Each time PCLK2 changes, this function must be called to update the
@@ -12406,7 +12406,7 @@ uint32_t HAL_RCC_GetPCLK2Freq(void)
  8004e2c:	4618      	mov	r0, r3
  8004e2e:	bd80      	pop	{r7, pc}
  8004e30:	40021000 	.word	0x40021000
- 8004e34:	0800a620 	.word	0x0800a620
+ 8004e34:	0800a61c 	.word	0x0800a61c
 
 08004e38 <HAL_RCC_GetClockConfig>:
   * contains the current clock configuration.
@@ -17700,7 +17700,7 @@ osTimerId osTimerCreate (const osTimerDef_t *timer_def, os_timer_type type, void
  8006a8a:	3710      	adds	r7, #16
  8006a8c:	46bd      	mov	sp, r7
  8006a8e:	bd80      	pop	{r7, pc}
- 8006a90:	0800a5f4 	.word	0x0800a5f4
+ 8006a90:	0800a5f0 	.word	0x0800a5f0
 
 08006a94 <osTimerStart>:
 * @param  millisec      time delay value of the timer.
@@ -21906,7 +21906,7 @@ BaseType_t xReturn;
  8008072:	3718      	adds	r7, #24
  8008074:	46bd      	mov	sp, r7
  8008076:	bd80      	pop	{r7, pc}
- 8008078:	0800a5f8 	.word	0x0800a5f8
+ 8008078:	0800a5f4 	.word	0x0800a5f4
  800807c:	08008691 	.word	0x08008691
  8008080:	20000ab4 	.word	0x20000ab4
  8008084:	20000ab0 	.word	0x20000ab0
@@ -24259,7 +24259,7 @@ BaseType_t xReturn = pdFAIL;
  8008d38:	bd80      	pop	{r7, pc}
  8008d3a:	bf00      	nop
  8008d3c:	20000aec 	.word	0x20000aec
- 8008d40:	0800a600 	.word	0x0800a600
+ 8008d40:	0800a5fc 	.word	0x0800a5fc
  8008d44:	08008f81 	.word	0x08008f81
  8008d48:	20000af0 	.word	0x20000af0
 
@@ -25463,7 +25463,7 @@ static void prvCheckForValidListAndQueue( void )
  80093a8:	20000ae8 	.word	0x20000ae8
  80093ac:	20000b70 	.word	0x20000b70
  80093b0:	20000af8 	.word	0x20000af8
- 80093b4:	0800a608 	.word	0x0800a608
+ 80093b4:	0800a604 	.word	0x0800a604
 
 080093b8 <pxPortInitialiseStack>:
 
@@ -26845,10 +26845,10 @@ uint8_t *puc;
  8009b62:	4798      	blx	r3
  8009b64:	3501      	adds	r5, #1
  8009b66:	e7f2      	b.n	8009b4e <__libc_init_array+0x1e>
- 8009b68:	0800a778 	.word	0x0800a778
- 8009b6c:	0800a778 	.word	0x0800a778
- 8009b70:	0800a778 	.word	0x0800a778
- 8009b74:	0800a77c 	.word	0x0800a77c
+ 8009b68:	0800a774 	.word	0x0800a774
+ 8009b6c:	0800a774 	.word	0x0800a774
+ 8009b70:	0800a774 	.word	0x0800a774
+ 8009b74:	0800a778 	.word	0x0800a778
 
 08009b78 <memcpy>:
  8009b78:	b510      	push	{r4, lr}
@@ -27328,9 +27328,9 @@ uint8_t *puc;
  8009fb8:	f000 f882 	bl	800a0c0 <_printf_i>
  8009fbc:	e7ea      	b.n	8009f94 <_svfiprintf_r+0x1b0>
  8009fbe:	bf00      	nop
- 8009fc0:	0800a642 	.word	0x0800a642
- 8009fc4:	0800a648 	.word	0x0800a648
- 8009fc8:	0800a64c 	.word	0x0800a64c
+ 8009fc0:	0800a63e 	.word	0x0800a63e
+ 8009fc4:	0800a644 	.word	0x0800a644
+ 8009fc8:	0800a648 	.word	0x0800a648
  8009fcc:	00000000 	.word	0x00000000
  8009fd0:	08009d2f 	.word	0x08009d2f
 
@@ -27666,8 +27666,8 @@ uint8_t *puc;
  800a2d2:	f104 0542 	add.w	r5, r4, #66	; 0x42
  800a2d6:	f884 3042 	strb.w	r3, [r4, #66]	; 0x42
  800a2da:	e76c      	b.n	800a1b6 <_printf_i+0xf6>
- 800a2dc:	0800a653 	.word	0x0800a653
- 800a2e0:	0800a664 	.word	0x0800a664
+ 800a2dc:	0800a64f 	.word	0x0800a64f
+ 800a2e0:	0800a660 	.word	0x0800a660
 
 0800a2e4 <__ascii_wctomb>:
  800a2e4:	b149      	cbz	r1, 800a2fa <__ascii_wctomb+0x16>
