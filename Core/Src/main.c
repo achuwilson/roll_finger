@@ -30,8 +30,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+// framebuffer for the two sets of RGB LEDs
 #define FRAMEBUFFER_SIZE        24 //24led * 3 colors
 #define FRAMEBUFFER2_SIZE        19 //24led * 3 colors
+
+#define UART_TX_BUFFER_SIZE	 256
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -54,10 +59,9 @@ DMA_HandleTypeDef hdma_tim2_ch2_ch4;
 DMA_HandleTypeDef hdma_tim2_ch1;
 DMA_HandleTypeDef hdma_tim2_up;
 
-UART_HandleTypeDef huart1;
-
 osThreadId adcreaderHandle;
 osThreadId serialreaderHandle;
+osMessageQId myQueue01Handle;
 osTimerId pidTimerHandle;
 osTimerId statusUpdateHandle;
 osSemaphoreId BinSemHandle;
@@ -86,23 +90,22 @@ void status_update_timer(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-int uart_cmd_full = 0;
 // array to hold values of ADC input ports
 uint32_t adc_value[7];
 
-int forcethres=20;
+// RGB LED structs
 struct pixel {
     uint8_t g;
     uint8_t r;
     uint8_t b;
 };
 struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
-//serial write buffer
-char buffer[30];
-float MSG[150];
 
-char UART1_rxBuffer[5] = {0};
-//char UART1_rxBuffer[1] = {0};
+
+// UART TX buffers
+uint16_t uartTXBufferIndex = 0;
+uint16_t uartTXBufferLength = 0;
+uint8_t uartTXBuffer[UART_TX_BUFFER_SIZE];
 
 //flags that are set to indicate whether motors  are
 // moving and their direction.
@@ -160,46 +163,15 @@ int gForceThres = 0;
 int gTimeOut = 10000; // 10 second timeout for gripper to reach threshold current
 int startTick = 0;
 
-// IR proximity sensors
-  int num_irsensors = 10;
-  int irdata_fl[10];
-  int irdata_fr[10];
-  int data_fl_real, data_fr_real, data_fl_noise,data_fr_noise,data_fl,data_fr;
-
-void make_pretty_colors(struct pixel *framebuffer, int channel, int state)
-{
-    int red_offset, green_offset, blue_offset, i;
-
-    red_offset = 0;
-    green_offset = (FRAMEBUFFER_SIZE / 4) * ((channel) & 0x03);
-    blue_offset = (FRAMEBUFFER_SIZE / 4) * ((channel >> 2) & 0x03);
-
-    /* Just generate a different-looking psychedelic-looking pattern for each channel, to
-     * test/prove that each channel is receiving a unique pattern
-     */
-    framebuffer[0].r=255;
-    framebuffer[0].g=0;
-    framebuffer[0].b=0;
-
-    		  framebuffer[1].r=0;
-    		    framebuffer[1].g=255;
-    		    framebuffer[1].b=0;
-
-    		    		  framebuffer[2].r=0;
-    		    		    framebuffer[2].g=0;
-    		    		    framebuffer[2].b=255;
+// IR proximity sensors and the buffers to hold data
+int num_irsensors = 10;
+int irdata_fl[10];
+int irdata_fr[10];
+int data_fl_real, data_fr_real, data_fl_noise,data_fr_noise,data_fl,data_fr;
 
 
-
-   /* for (i = 0; i < FRAMEBUFFER_SIZE ; i++) {
-        framebuffer[(i + red_offset + state) % FRAMEBUFFER_SIZE].r = i;
-        framebuffer[(i + green_offset + state) % FRAMEBUFFER_SIZE].g = i;
-        framebuffer[(i + blue_offset + state) % FRAMEBUFFER_SIZE].b = i;
-    }*/
-
-}
-
-void lightupLED(struct pixel *framebuffer)
+// set the RGB LEDs on Finger 1
+void lightupLED1(struct pixel *framebuffer)
 {
 	for(int i=0;i<5;i++)
 	{
@@ -226,6 +198,7 @@ void lightupLED(struct pixel *framebuffer)
 		framebuffer[i].b=0;
 	}
 }
+// set the RGB LEDs on Finger 2
 void lightupLED2(struct pixel *framebuffer)
 {
 	for(int i=0;i<5;i++)
@@ -246,22 +219,6 @@ void lightupLED2(struct pixel *framebuffer)
 		framebuffer[i].g=0;
 		framebuffer[i].b=0;
 	}
-}
-//---------[ UART Data Reception Completion CallBackFunc. ]---------
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-	//restart the buffer whenever it’s full
-    __attribute__((unused)) HAL_StatusTypeDef state;
-   // HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);  //for debug
-    //if(uart_cmd_full=1)
-    //{
-    //state = HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
-    //}
-    //else
-    {
-    	state = HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
-    }
-
 }
 
 void open_gripper(int pwmval)
@@ -305,20 +262,7 @@ void close_gripper(int pwmval)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 		osSemaphoreRelease(BinSemHandle);
-		/*
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
-		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-		    		  HAL_Delay(100);
-		    		  while(adc_value[2]<forcethres)
-		    		  {
-		    		  }
-		    		  HAL_Delay(30);
-		    		  while(adc_value[2]<forcethres)
-		    		  {
-		    		  }
-		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-		    		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-		    		  */
+
 	}
 
 }
@@ -477,24 +421,14 @@ void ir_led_off()
 
 }
 
-void clear_rxBuffer(void)
-{
 
-	for (int i = 0; i < 5; ++i) // Using for loop we are initializing
-	{
-		UART1_rxBuffer[i] = 0;
-	}
-
-}
 
 void set_mux_fl(value)
 {
-
-
-HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, value & 0b0001);
-HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, value & 0b0010);
-HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, value & 0b0100);
-HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, value & 0b1000);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, value & 0b0001);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, value & 0b0010);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, value & 0b0100);
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, value & 0b1000);
 }
 void set_mux_fr(value)
 {
@@ -519,7 +453,7 @@ int scale_val(int inval, int inmin, int inmax, int outmin, int outmax)
 	return outmin + slope * (inval - inmin);
 }
 
-int constrain(int inval, int minval, int maxval)
+int clamp_val(int inval, int minval, int maxval)
 {
 	if(inval<minval)
 	{
@@ -532,6 +466,65 @@ int constrain(int inval, int minval, int maxval)
 	else
 		return inval;
 }
+
+// send data to uart
+uint8_t sendData(char* str)
+{
+	// check whether the buffer is empty after previous transmission
+	if(uartTXBufferLength==0)
+	{
+		uartTXBufferLength = strlen(str);
+		uartTXBufferIndex = 0;
+		for(int i = 0;i<uartTXBufferLength;i++)
+		{
+			uartTXBuffer[i]=*str;
+			++str;
+		}
+		//Transmit the first byte, and increment the index
+		LL_USART_TransmitData8(USART1, uartTXBuffer[uartTXBufferIndex++]);
+		// Enable Interrupt and let it handle the rest
+		LL_USART_EnableIT_TXE(USART1);
+	}
+	else
+	{
+		// Buffer full, so return error
+		return 1;
+	}
+	return 0 ;
+}
+
+/*The following function handles the UART ISR
+Open stm32f1xx_it.c and add the following line inside "void USART1_IRQHandler(void)"
+ 	 LL_USART1_IRQHandler();
+*/
+void LL_USART1_IRQHandler()
+{	// RX Interrupt
+	if(LL_USART_IsActiveFlag_RXNE(USART1) == 0x01)
+		{
+			int data = LL_USART_ReceiveData8(USART1);
+			osMessagePut(myQueue01Handle, data, osWaitForever);
+		}
+	// TX Interrupt
+	if(LL_USART_IsEnabledIT_TXE(USART1) == 0x01 && LL_USART_IsActiveFlag_TXE(USART1) == 0x01)
+		{
+		//check whether we have transmitted all data in the TX  buffer
+		if(uartTXBufferIndex>=uartTXBufferLength)
+			{
+			//if so, reset the buffer length and index
+			uartTXBufferLength = 0;
+			uartTXBufferIndex = 0;
+			//Disable TX done interrupt
+			LL_USART_DisableIT_TXE(USART1);
+			}
+		else
+			{
+			//Transmit another byte
+			LL_USART_TransmitData8(USART1, uartTXBuffer[uartTXBufferIndex++]);
+			}
+		}
+}
+
+
 /* USER CODE END 0 */
 
 /**
@@ -583,7 +576,7 @@ int main(void)
   //}
   //else
   //{
-	  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+	 // HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
   //}
   //START PWM TIMERS
   /* PWM frequency is set  =Fclk/((ARR+1)*(PSC+1))
@@ -616,18 +609,18 @@ int main(void)
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
   	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
   // = {'\0'};
-  long X = 0;
+  //long X = 0;
 
 
 
 
-  int temp;
+  //int temp;
 
   struct led_channel_info led_channels[WS2812_NUM_CHANNELS];
 
-      int ch, animation_state = 0;
+     // int ch, animation_state = 0;
 
-      __enable_irq();
+    //  __enable_irq();
       HAL_Delay(200);
 
       //INITIALIZE NEOPIXELS
@@ -643,7 +636,7 @@ int main(void)
       ws2812_init();
       HAL_Delay(200);
       // SETUP LED COLORS
-      lightupLED(channel_framebuffers[0]);
+      lightupLED1(channel_framebuffers[0]);
       lightupLED2(channel_framebuffers[1]);
 
    	  __disable_irq();
@@ -681,6 +674,11 @@ int main(void)
   //status update timer runs at 100 hz
   osTimerStart(statusUpdateHandle, 10);
   /* USER CODE END RTOS_TIMERS */
+
+  /* Create the queue(s) */
+  /* definition and creation of myQueue01 */
+  osMessageQDef(myQueue01, 128, uint16_t);
+  myQueue01Handle = osMessageCreate(osMessageQ(myQueue01), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -1076,21 +1074,48 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 0 */
 
+  LL_USART_InitTypeDef USART_InitStruct = {0};
+
+  LL_GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* Peripheral clock enable */
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1);
+
+  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOA);
+  /**USART1 GPIO Configuration
+  PA9   ------> USART1_TX
+  PA10   ------> USART1_RX
+  */
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_9;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_ALTERNATE;
+  GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_HIGH;
+  GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
+  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  GPIO_InitStruct.Pin = LL_GPIO_PIN_10;
+  GPIO_InitStruct.Mode = LL_GPIO_MODE_FLOATING;
+  LL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* USART1 interrupt Init */
+  NVIC_SetPriority(USART1_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),5, 0));
+  NVIC_EnableIRQ(USART1_IRQn);
+
   /* USER CODE BEGIN USART1_Init 1 */
+  // enable the RX and TX interrupts
+  LL_USART_EnableIT_RXNE(USART1);
+  LL_USART_EnableIT_TXE(USART1);
 
   /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  USART_InitStruct.BaudRate = 115200;
+  USART_InitStruct.DataWidth = LL_USART_DATAWIDTH_8B;
+  USART_InitStruct.StopBits = LL_USART_STOPBITS_1;
+  USART_InitStruct.Parity = LL_USART_PARITY_NONE;
+  USART_InitStruct.TransferDirection = LL_USART_DIRECTION_TX_RX;
+  USART_InitStruct.HardwareFlowControl = LL_USART_HWCONTROL_NONE;
+  USART_InitStruct.OverSampling = LL_USART_OVERSAMPLING_16;
+  LL_USART_Init(USART1, &USART_InitStruct);
+  LL_USART_ConfigAsyncMode(USART1);
+  LL_USART_Enable(USART1);
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
@@ -1242,300 +1267,196 @@ void adc_reader_task(void const * argument)
 void serial_reader_task(void const * argument)
 {
   /* USER CODE BEGIN serial_reader_task */
+	osEvent messageHandler;
+
+		int numchr = 7;
+		char data[numchr];
+		int cmd_val=0;
+
   /* Infinite loop */
   for(;;)
   {
 
 	  /*		Valid serial commands
-	   * 	op000 - open finger
-	   * 	osXXX -  open finger with XXX speed
-	   * 	cp000 - close finger with position hold
-	   * 	ccXXX - close finger with current hold
-	   * 	csXXX - close finger with XXX speed
-	   *    lpXXX - left finger position roll
-	   *    lfXXX - move left finger forward with XXX speed
-	   *    lrXXX - move left finger reverse with XXX speed
-	   *    rpXXX - right finger position roll
-	   *    rfXXX - move right finger forward with XXX speed
-	   *    rrXXX - move right finger reverse with XXX speed
-	   *    sl000 - stop left finger
-	   *    sr000 - stop right finger
-	   *    sg000 - stop gripper
-	   *	sXXXX - stop all
-	   *	bl000 - brake left finger
-	   *    br000 - brake right finger
-	   *    bg000 - brake gripper
-	   *	bXXXX - brake all
-	   *	R	  - Reset serial command queue
+	   * 	cop000e - open finger
+	   * 	cosXXXe -  open finger with XXX speed
+	   * 	ccpXXXe - close finger with position hold, XXX current threshold
+	   * 	cccXXXe - close finger with current hold
+	   * 	ccsXXXe - close finger with XXX speed
+	   *    clpXXXe - left finger position roll
+	   *    clfXXXe - move left finger forward with XXX speed
+	   *    clrXXXe - move left finger reverse with XXX speed
+	   *    crpXXXe - right finger position roll
+	   *    crfXXXe - move right finger forward with XXX speed
+	   *    crrXXXe - move right finger reverse with XXX speed
+	   *    csl000e - stop left finger
+	   *    csr000e - stop right finger
+	   *    csg000e - stop gripper
+	   *	csXXXXe - stop all
+	   *	cbl000e - brake left finger
+	   *    cbr000e - brake right finger
+	   *    cbg000e - brake gripper
+	   *	cbXXXXe - brake all
+	   *		  - Reset serial command queue
 	   *
 	   */
-	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
-	  //close gripper
 
-
-
-	  switch(UART1_rxBuffer[0])
-	  {
-
-	  case 'c':
+	  messageHandler = osMessageGet(myQueue01Handle, osWaitForever);
+	  for(int i =0;i<(numchr-1);i++)
 	  	  {
-			  //close in current control mode
-			  if(UART1_rxBuffer[1]=='c')
-			  	  {
-				  // create the NULL terminated character array with the values
-				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-				  int cmd_val = atoi(val_ar);
-				  gPid = 1;
-				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cc %d \n", cmd_val), 100);
-			  	  }
-			  //close in position hold mode
-			  else if(UART1_rxBuffer[1]=='p')
-		  	  	  {
-				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cp  \n", 1), 100);
-				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-				  gForceThres = atoi(val_ar);
-				  gPid = 2;
-				  close_gripper(100);
-				  startTick = HAL_GetTick();
+	  		  data[i]=data[i+1];
+	  	  }
+	  data[numchr-1] =messageHandler.value.p;
+		  //check for start and end characters
+		  if(data[0]=='c' && data[6]=='e')
+		  {
+			  // got command
+			  // extract the numerical value
+			  char val_ar[4]= {data[3], data[4], data[5], NULL};
+			  cmd_val = atoi(val_ar);
 
-		  	  	  }
-			  //close in speed control mode
-			  else if(UART1_rxBuffer[1]=='s')
+			  switch(data[1])
 			  {
-				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-				  int cmd_val = atoi(val_ar);
-				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cs %d \n", cmd_val), 100);
-				  gPid = 3;
-				  close_gripper(cmd_val);
-				  startTick = HAL_GetTick();
+			  case 'c': // CLOSE GRIPPER
+			  	  	  {   //close in current control mode
+			  	  		  if(data[2]=='c')
+			  	  		  {
+			  	  			gPid = 1;
+			  	  		  }
+			  	  		//close in position hold mode
+			  	  		  else if(data[2]=='p')
+			  	  		  {
+			  	  			gForceThres = cmd_val;
+			  	  			gPid = 2;
+			  	  			close_gripper(100);
+			  	  			startTick = HAL_GetTick();
+			  	  		  }
+			  	  		//close in speed control mode
+			  	  		  else if(data[2]=='s')
+			  	  		  {
+			  	  			gPid = 3;
+			  	  			close_gripper(cmd_val);
+			  	  			startTick = HAL_GetTick();
+			  	  		  }
+			  	  	  }break;
+			  case 's': // STOP MOTION
+				  	  	// motors inputs disconnected, can move by hand
+			  		  {
+			  	  		  if(data[2]=='g')
+			  	  		  {
+			  	  			 stop_gripper(); // stop all motors
+			  	  		  }
+			  	  		  else if(data[2]=='l')
+			  	  		  {
+			  	  			stop_lf(); // stop left finger
+			  	  		  }
+			  	  		  else if(data[2]=='r')
+			  	  		  {
+			  	  			stop_rf(); // stop right finger
+			  	  		  }
+
+
+			  		 }break;
+			  case 'b': // BRAKE MOTORS
+				  	  	// motor inputs are shorted. cannot move by hand
+			  		  {
+			  	  		  if(data[2]=='g')
+			  	  		  {
+			  	  			brake_gripper(); // brake all motors
+			  	  		  }
+			  	  		  else if(data[2]=='l')
+			  	  		  {
+			  	  			  brake_lf(); // brake left finger
+			  	  		  }
+			  	  		  else if(data[2]=='r')
+			  	  		  {
+			  	  			  brake_rf(); // brake right finger
+			  	  		  }
+			  		 }break;
+			  case 'o': // OPEN THE GRIPPPER
+			  		  {
+			  	  		  if(data[2]=='p')
+			  	  		  {
+			  	  			open_gripper(100); // open fully
+			  	  		  }
+			  	  		  else if(data[2]=='s')
+			  	  		  {
+			  	  			open_gripper(cmd_val); // open with speed control
+			  	  		  }
+			  		 }break;
+			  case 'r': // UP DOWN CONTROL OF RIGHT FINGER
+			  		  {
+			  	  		  if(data[2]=='p')
+			  	  		  {
+			  	  			//right finger position control
+			  	  			rPid= 1;
+			  	  			rPosDesired =  scale_val(cmd_val,0,200,RFMinPos,RFMaxPos);
+			  	  		  }
+
+			  	  		  else if(data[2]=='f')
+			  	  		  {
+			  	  			  // move right finger at forward velocity
+			  	  			move_rf(cmd_val);
+
+			  	  		  }
+
+			  	  		  else if(data[2]=='r')
+			  	  		  {
+			  	  			  // move right finger at reverse velocity
+			  	  			move_rb(cmd_val);
+			  	  			rPid=0;
+
+			  	  		  }
+
+			  		 }break;
+			  case 'l': // UP DOWN CONTROL OF LEFT FINGER
+			  		  {
+			  	  		  if(data[2]=='p')
+			  	  		  {
+			  	  			  //left finger position control
+			  	  			lPid = 1;
+			  	  			lPosDesired = scale_val(cmd_val,0,200,LFMinPos,LFMaxPos);
+			  	  		  }
+
+			  	  		  else if(data[2]=='f')
+			  	  		  {
+			  	  			  // move left finger at forward velocity
+			  	  			move_lf(cmd_val);
+			  	  		  }
+
+			  	  		  else if(data[2]=='r')
+			  	  		  {
+			  	  			  // move left finger at reverse velocity
+			  	  			move_lb(cmd_val);
+			  	  			lPid=0;
+			  	  		  }
+
+			  		 }break;
 
 			  }
-		  clear_rxBuffer();
-	  	  }break;
-	  case 's':
-	  	  {
-	  		if(UART1_rxBuffer[1]=='g')
-	  		{
-	  			stop_gripper(); // motors inputs disconnected, can move by hand
+		  }
 
-	  		}
-	  		else if(UART1_rxBuffer[1]=='l')
-	  		{
-	  			stop_lf();  // motors inputs disconnected, can move by hand
-	  		}
-	  		else if(UART1_rxBuffer[1]=='r')
-	  		{
-	  			stop_rf(); //motors inputs disconnected, can move by hand
-	  		}
-	  		else
-	  		{
-	  			stop_all(); //motors inputs disconnected, can move by hand
-	  		}
-	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
-		  clear_rxBuffer();
-	  	  }break;
-	  case 'b':
-	  	  {
-	  		if(UART1_rxBuffer[1]=='g')
-	  		{
-	  			brake_gripper(); // motor inputs shorted, cannot move by hand
-	  		}
-	  		else if(UART1_rxBuffer[1]=='l')
-	  		{
-	  			brake_lf();  // motor inputs shorted, cannot move by hand
-	  		}
-	  		else if(UART1_rxBuffer[1]=='r')
-	  		{
-	  			brake_rf(); //motor inputs shorted, cannot move by hand
-	  		}
-	  		else
-	  		{
-	  			brake_all(); //motor inputs shorted, cannot move by hand
-	  		}
-	  	  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "STOP \n", 1), 100);
-		  clear_rxBuffer();
-	  	  }break;
-	  case 'o':
-	  	  {
-	  		// open upto fully open position
-	  		if(UART1_rxBuffer[1]=='p')
-	  			{
-	  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN \n", 1), 100);
-	  			open_gripper(100);
-	  			}
-	  		// open with speed control
-	  		else if(UART1_rxBuffer[1]=='s')
-	  			{
-	  			char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-	  			int cmd_val = atoi(val_ar);
-	  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "OPEN SPEED %d \n", cmd_val), 100);
-	  			open_gripper(cmd_val);
-	  			}
-
-	  	  clear_rxBuffer();
-	  	  }break;
-	  case 'r':
-	  	  {
-	  		char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-	  		int cmd_val = atoi(val_ar);
-	  	  	//right finger position control
-	  	  	if(UART1_rxBuffer[1]=='p')
-	  	  		{
-	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RPOS %d \n", cmd_val), 100);
-	  	  		//set the PID enable flag
-	  	  		rPid= 1;
-	  	  		rPosDesired =  scale_val(cmd_val,0,200,RFMinPos,RFMaxPos);
-	  	  		}
-	  	  	//right finger move forward at velocity
-	  	  	else if(UART1_rxBuffer[1]=='f')
-	  	  		{
-	  	  		move_rf(cmd_val);
-	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RF %d \n", cmd_val), 100);
-	  	  		}
-	  	  	//right finger move reverse at velocity
-	  	  	else if(UART1_rxBuffer[1]=='r')
-	  	  		{
-	  	  		move_rb(cmd_val);
-	  	  		rPid=0;
-	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RR %d \n", cmd_val), 100);
-	  	  		}
-	  	  clear_rxBuffer();
-	  	  }break;
-	   case 'l':
-	  	  {
-	  	  	char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
-	  	  	int cmd_val = atoi(val_ar);
-	  	  	//left finger position control
-	  	  	if(UART1_rxBuffer[1]=='p')
-	  	  		{
-	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LPOS %d \n", cmd_val), 100);
-	  	  		// set the PID enable flag true
-	  	  		lPid = 1;
-	  	  		lPosDesired = scale_val(cmd_val,0,200,LFMinPos,LFMaxPos);
-	  	  		}
-	  	  	//left finger move forward at velocity
-	  	  	else if(UART1_rxBuffer[1]=='f')
-	  	  		{
-	  	  		move_lf(cmd_val);
-	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LF %d \n", cmd_val), 100);
-	  	  		}
-	  	  	//left finger move reverse at velocity
-	  	  	else if(UART1_rxBuffer[1]=='r')
-	  	  		{
-	  	  		move_lb(cmd_val);
-	  	  		lPid=0;
-	  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "LR %d \n", cmd_val), 100);
-	  	  		}
-
-	  	  	clear_rxBuffer();
-	  	  }break;
-
-	   /*default:
-		   clear_rxBuffer();
-*/
-	  }
-
-	  //Reset the serial buffer
-	  if((UART1_rxBuffer[0]=='R')||(UART1_rxBuffer[1]=='R')||(UART1_rxBuffer[2]=='R')||(UART1_rxBuffer[3]=='R')||(UART1_rxBuffer[4]=='R'))
-	  {
-		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RESET %d \n", 1), 100);
-
-		  __disable_irq();
-		  clear_rxBuffer();
-		  huart1.RxState= HAL_UART_STATE_READY;
-		  __enable_irq();
-		  __attribute__((unused)) HAL_StatusTypeDef state;
-		  state= HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
-	  }
-	  else
-	  {
-		  clear_rxBuffer();
-	  }
-
-
-
-    osDelay(5);
+	    osDelay(1);
     //HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);
 
   }
   /* USER CODE END serial_reader_task */
 }
 
-void serial_reader_task_temp(void const * argument)
-{
-
-	for(;;)
-	{
-	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "sertask %d \n", uart_cmd_full), 100);
-
-			  switch(UART1_rxBuffer[0])
-			  	  {
-			  case 'o':
-			  	  	  {
-			  	  		  open_gripper(100);
-			  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "open %d \n", uart_cmd_full), 100);
-			  	  		clear_rxBuffer();
-			  	  	  }break;
-			  case 'c':
-			  		  {
-			  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "close %d \n", uart_cmd_full), 100);
-			  			gForceThres = 15;
-			  			gPid = 2;
-			  		    close_gripper(100);
-			  			startTick = HAL_GetTick();
-
-			  			clear_rxBuffer();
-			  		  }break;
-
-			  case 'l':
-		  		  		  {
-		  		  			  // LEFT FORWARD
-		  		  			  lPid = 1;
-		  		  			  lPosDesired=LFMaxPos;
-		  		  			clear_rxBuffer();
-		  		  		  }break;
-			  case 'r':
-		  		  		  {
-		  		  			 // RIGHT FORWARD
-		  		  			rPid= 1;
-		  		  			rPosDesired =  RFMaxPos; //scale_val(cmd_val,0,200,RFMinPos,RFMaxPos);
-		  		  		clear_rxBuffer();
-		  		  		  }break;
-			  case 'k':
-		  		  		  {
-		  		  			  // LEFT BACK
-		  		  			  lPid = 1;
-		  		  			  lPosDesired = LFMinPos;
-		  		  			clear_rxBuffer();
-		  		  		  }break;
-			  case 'e':
-		  		  		  {
-		  		  			  // RIGHT BACK
-		  		  			  rPid =1;
-		  		  			  rPosDesired = RFMinPos;
-			  		  			clear_rxBuffer();
-
-		  		  		  }break;
-			  default:
-				  clear_rxBuffer();
-
-
-
-			  	  }
-			    osDelay(5);
-
-	}
-
-}
 /* pid_timer function */
 void pid_timer(void const * argument)
 {
-  /* USER CODE BEGIN pid_timer */
-	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "TIMER \n", 1), 10);
-	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
-	//HAL_GPIO_WritePin(GPIOB, , value & 0b0001);
-	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "CC %d %d  %d \n", adc_value[6],lfw, isMoveB_LF ), 100);
-	if((adc_value[6]>LFMaxPos) && (lfw==1))
+	// ENSURE THAT THE MOTORS DOES NOT GO BEYOND MINIMUM/MAX POSITIONS
+	//( if exceeded MAXPos, dont allow forward motion,
+	//	but only allow reverse motion, similar with MINPos, for all motors)
+	//
+	// lfw is set only when left finger is moving forward
+	// so check whether L finger goes beyond and stop the motion only
+	// when L finger is moving forward (and then set lfw=0).
+	// if we dont use flags like lfw, lrw, rfw, rrw, mgo, mgc, it will get
+	// stuck at a position and cant move
+
+  if((adc_value[6]>LFMaxPos) && (lfw==1))
 	{
 		osSemaphoreWait(BinSemHandle, osWaitForever);
 
@@ -1593,6 +1514,7 @@ void pid_timer(void const * argument)
 			mgc=0;
 			osSemaphoreRelease(BinSemHandle);
 		}
+
 	//PID position control for LFinger
 	if(lPid==1)
 	{
@@ -1605,7 +1527,7 @@ void pid_timer(void const * argument)
 		// calculate control value
 		int l_ctrl   = (l_Kp * error) + ((l_Kd/pid_time_period)* l_error_derivative) + (l_Ki*l_error_integral*pid_time_period);
 		// ensure control value is within limits
-		l_ctrl = constrain(abs(l_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
+		l_ctrl = clamp_val(abs(l_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
 		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "PID L %d \t %d \t %d \t %d\n", lPosDesired, adc_value[6],error, l_ctrl), 100);
 		// move motors
 		if(error>lPosDelta)
@@ -1640,7 +1562,7 @@ void pid_timer(void const * argument)
 		// calculate control value
 		int r_ctrl   = (r_Kp * error) + ((r_Kd/pid_time_period)* r_error_derivative) + (r_Ki*r_error_integral*pid_time_period);
 		// ensure control value is within limits
-		r_ctrl = constrain(abs(r_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
+		r_ctrl = clamp_val(abs(r_ctrl), 20, 80);// constrain to max 80 % PWM since its a 6V motor at 12V
 		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "PID L %d \t %d \t %d \t %d\n", lPosDesired, adc_value[6],error, l_ctrl), 100);
 		// move motors
 		if(error>rPosDelta)
@@ -1712,6 +1634,8 @@ void status_update_timer(void const * argument)
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
 	//sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",
 	//		irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+	char MSG[180];
+
 
 	sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
 			adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
@@ -1719,8 +1643,8 @@ void status_update_timer(void const * argument)
 				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
-
-	HAL_UART_Transmit_IT(&huart1, MSG, strlen(MSG));
+	sendData(MSG);
+	//HAL_UART_Transmit_IT(&huart1, MSG, strlen(MSG));
 
 
   /* USER CODE END status_update_timer */
