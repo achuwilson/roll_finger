@@ -86,6 +86,7 @@ void status_update_timer(void const * argument);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+int uart_cmd_full = 0;
 // array to hold values of ADC input ports
 uint32_t adc_value[7];
 
@@ -99,7 +100,9 @@ struct pixel channel_framebuffers[WS2812_NUM_CHANNELS][FRAMEBUFFER_SIZE];
 //serial write buffer
 char buffer[30];
 float MSG[150];
+
 char UART1_rxBuffer[5] = {0};
+//char UART1_rxBuffer[1] = {0};
 
 //flags that are set to indicate whether motors  are
 // moving and their direction.
@@ -212,9 +215,9 @@ void lightupLED(struct pixel *framebuffer)
 	}
 	for(int i=12;i<17;i++)
 	{
-		framebuffer[i].r=50;
-		framebuffer[i].g=50;
-		framebuffer[i].b=50;
+		framebuffer[i].r=0;
+		framebuffer[i].g=0;
+		framebuffer[i].b=0;
 	}
 	for(int i=17;i<24;i++)
 	{
@@ -247,8 +250,17 @@ void lightupLED2(struct pixel *framebuffer)
 //---------[ UART Data Reception Completion CallBackFunc. ]---------
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
+	//restart the buffer whenever it’s full
+    __attribute__((unused)) HAL_StatusTypeDef state;
    // HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);  //for debug
-    HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+    //if(uart_cmd_full=1)
+    //{
+    //state = HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+    //}
+    //else
+    {
+    	state = HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+    }
 
 }
 
@@ -467,10 +479,12 @@ void ir_led_off()
 
 void clear_rxBuffer(void)
 {
+
 	for (int i = 0; i < 5; ++i) // Using for loop we are initializing
 	{
 		UART1_rxBuffer[i] = 0;
 	}
+
 }
 
 void set_mux_fl(value)
@@ -563,8 +577,14 @@ int main(void)
    * HAL_UART_RxCpltCallback(
    *
    */
-  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
-
+  //if(uart_cmd_full=1)
+  //{
+  //HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+  //}
+  //else
+  //{
+	  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+  //}
   //START PWM TIMERS
   /* PWM frequency is set  =Fclk/((ARR+1)*(PSC+1))
    *	Fclk =  clock frequency
@@ -1225,6 +1245,7 @@ void serial_reader_task(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+
 	  /*		Valid serial commands
 	   * 	op000 - open finger
 	   * 	osXXX -  open finger with XXX speed
@@ -1250,6 +1271,9 @@ void serial_reader_task(void const * argument)
 	   */
 	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "Serial READ \n", 1), 10);
 	  //close gripper
+
+
+
 	  switch(UART1_rxBuffer[0])
 	  {
 
@@ -1267,7 +1291,7 @@ void serial_reader_task(void const * argument)
 			  //close in position hold mode
 			  else if(UART1_rxBuffer[1]=='p')
 		  	  	  {
-				  HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cp  \n", 1), 100);
+				  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "cp  \n", 1), 100);
 				  char val_ar[4]={UART1_rxBuffer[2], UART1_rxBuffer[3], UART1_rxBuffer[4],NULL};
 				  gForceThres = atoi(val_ar);
 				  gPid = 2;
@@ -1293,6 +1317,7 @@ void serial_reader_task(void const * argument)
 	  		if(UART1_rxBuffer[1]=='g')
 	  		{
 	  			stop_gripper(); // motors inputs disconnected, can move by hand
+
 	  		}
 	  		else if(UART1_rxBuffer[1]=='l')
 	  		{
@@ -1414,16 +1439,21 @@ void serial_reader_task(void const * argument)
 	  if((UART1_rxBuffer[0]=='R')||(UART1_rxBuffer[1]=='R')||(UART1_rxBuffer[2]=='R')||(UART1_rxBuffer[3]=='R')||(UART1_rxBuffer[4]=='R'))
 	  {
 		  //HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "RESET %d \n", 1), 100);
+
 		  __disable_irq();
 		  clear_rxBuffer();
 		  huart1.RxState= HAL_UART_STATE_READY;
 		  __enable_irq();
-		  HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
+		  __attribute__((unused)) HAL_StatusTypeDef state;
+		  state= HAL_UART_Receive_IT(&huart1, UART1_rxBuffer, 5);
 	  }
 	  else
 	  {
 		  clear_rxBuffer();
 	  }
+
+
+
     osDelay(5);
     //HAL_UART_Transmit(&huart1, UART1_rxBuffer, 5, 100);
 
@@ -1431,6 +1461,72 @@ void serial_reader_task(void const * argument)
   /* USER CODE END serial_reader_task */
 }
 
+void serial_reader_task_temp(void const * argument)
+{
+
+	for(;;)
+	{
+	//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "sertask %d \n", uart_cmd_full), 100);
+
+			  switch(UART1_rxBuffer[0])
+			  	  {
+			  case 'o':
+			  	  	  {
+			  	  		  open_gripper(100);
+			  	  		//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "open %d \n", uart_cmd_full), 100);
+			  	  		clear_rxBuffer();
+			  	  	  }break;
+			  case 'c':
+			  		  {
+			  			//HAL_UART_Transmit(&huart1, (uint8_t*)buffer, sprintf(buffer, "close %d \n", uart_cmd_full), 100);
+			  			gForceThres = 15;
+			  			gPid = 2;
+			  		    close_gripper(100);
+			  			startTick = HAL_GetTick();
+
+			  			clear_rxBuffer();
+			  		  }break;
+
+			  case 'l':
+		  		  		  {
+		  		  			  // LEFT FORWARD
+		  		  			  lPid = 1;
+		  		  			  lPosDesired=LFMaxPos;
+		  		  			clear_rxBuffer();
+		  		  		  }break;
+			  case 'r':
+		  		  		  {
+		  		  			 // RIGHT FORWARD
+		  		  			rPid= 1;
+		  		  			rPosDesired =  RFMaxPos; //scale_val(cmd_val,0,200,RFMinPos,RFMaxPos);
+		  		  		clear_rxBuffer();
+		  		  		  }break;
+			  case 'k':
+		  		  		  {
+		  		  			  // LEFT BACK
+		  		  			  lPid = 1;
+		  		  			  lPosDesired = LFMinPos;
+		  		  			clear_rxBuffer();
+		  		  		  }break;
+			  case 'e':
+		  		  		  {
+		  		  			  // RIGHT BACK
+		  		  			  rPid =1;
+		  		  			  rPosDesired = RFMinPos;
+			  		  			clear_rxBuffer();
+
+		  		  		  }break;
+			  default:
+				  clear_rxBuffer();
+
+
+
+			  	  }
+			    osDelay(5);
+
+	}
+
+}
 /* pid_timer function */
 void pid_timer(void const * argument)
 {
