@@ -1588,7 +1588,7 @@ void pid_timer(void const * argument)
 
 	// control of gripper motors
 	if(gPid==2)
-	{
+	{  // for mode in which gripper close, check for current and hold position if current> threshold
 		// check for current
 		if(adc_value[2]>gForceThres)
 		{	// verify again after a short delay
@@ -1610,7 +1610,7 @@ void pid_timer(void const * argument)
 		}
 	}
 	 if(gPid==3)
-	{
+	{ // for velocity move mode, no current checking --<<< WARNING
 		// check for timeout
 				if( abs(HAL_GetTick()-startTick)>gTimeOut)
 				{
