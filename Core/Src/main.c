@@ -234,18 +234,6 @@ void open_gripper(int pwmval)
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
 		osSemaphoreRelease(BinSemHandle);
-		/*
-		    		 HAL_Delay(100);
-		    		 while(adc_value[2]<forcethres)
-		    		 {
-	   		  		  }
-	         	  	HAL_Delay(30);
-		    	  	while(adc_value[2]<forcethres)
-		      		  {
-	 		  		  }
-		    	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
-		    	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_RESET);
-		*/
 	}
 }
 
@@ -608,22 +596,13 @@ int main(void)
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_3, 0);
   	__HAL_TIM_SetCompare(&htim4, TIM_CHANNEL_4, 0);
   	__HAL_TIM_SetCompare(&htim1, TIM_CHANNEL_1, 0);
-  // = {'\0'};
-  //long X = 0;
 
-
-
-
-  //int temp;
 
   struct led_channel_info led_channels[WS2812_NUM_CHANNELS];
 
-     // int ch, animation_state = 0;
+  HAL_Delay(200);
 
-    //  __enable_irq();
-      HAL_Delay(200);
-
-      //INITIALIZE NEOPIXELS
+//INITIALIZE NEOPIXELS
       //channel 0
       led_channels[0].framebuffer = channel_framebuffers[0];
       led_channels[0].length = FRAMEBUFFER_SIZE * sizeof(struct pixel);
@@ -638,7 +617,7 @@ int main(void)
       // SETUP LED COLORS
       lightupLED1(channel_framebuffers[0]);
       lightupLED2(channel_framebuffers[1]);
-
+      // we have to disable interrupts while refreshing LEDs
    	  __disable_irq();
    	  ws2812_refresh(led_channels, GPIOB);
    	  __enable_irq();
@@ -1248,6 +1227,7 @@ void adc_reader_task(void const * argument)
 	  		  data_fl_real = -1*(data_fl - data_fl_noise);
 	  		  data_fr_real = -1*(data_fr - data_fr_noise);
 
+	  		  //fill the IR data buffers
 	  		  irdata_fl[i] = data_fl_real;
 	  		  irdata_fr[i] = data_fr_real;
 
@@ -1632,8 +1612,7 @@ void status_update_timer(void const * argument)
 	 *
 	 */
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
-	//sprintf(MSG, "Data = %d \t %d  \t %d \t %d  \t%d  \t%d \t%d \t \r\n ",
-	//		irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6]);
+
 	char MSG[180];
 
 
