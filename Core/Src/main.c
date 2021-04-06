@@ -127,10 +127,36 @@ int LFMinPos = 200;
 int RFMaxPos = 3900;
 int RFMinPos = 200;
 // for M1 & M2 Min when extended ; Max when retracted
+// fully open at minpos and closed at maxpos
+// when closed, value depends on finger geometry. Example values
+// when closed is 3299, 3699
+/* -----||----- 3299, 3699(gap 0 )
+ * ----|  | ---3000,3200 (gap = (3299-3000) + (3699-3200))
+ *--|         |-- at full open, theoretical max gap = ((3850-430)+(3850-380)) = 6890
+ * so we will scale 0 to 6890 into 0 to 999
+ *
+ *
+ */
 int M1MinPos = 430;
 int M1MaxPos = 3850;
 int M2MinPos = 380;
 int M2MaxPos = 3850;
+//M1 and M2 positions for zero gap
+int M1z = 3850;
+int M2z = 3850;
+int gripperGapcmd = 0;
+int gripperGapDelta = 2;
+int GapMax = 6890;
+//PID params for gripper gap control
+double g_error_prev=0;
+double g_error_integral = 0;
+double g_Kp = 1.8;
+double g_Kd = 0.8;
+double g_Ki = 0.0001;
+
+//gripper gap value limits
+int gmin = 3500; // -value when closed - depends on finger geometry
+int gmax=6500; // value when fully open
 
 // Desired positions & currents
 int lPosDesired =0;
@@ -1277,11 +1303,14 @@ void serial_reader_task(void const * argument)
 	   *    cbr000e - brake right finger
 	   *    cbg000e - brake gripper
 	   *	cbXXXXe - brake all
+	   *	cgz000e - set zero for gripper gap
+	   *	cggXXXe - set gripper gap to XXX ( min 0, Max 999)
 	   *		  - Reset serial command queue
 	   *
 	   */
 
 	  messageHandler = osMessageGet(myQueue01Handle, osWaitForever);
+
 	  for(int i =0;i<(numchr-1);i++)
 	  	  {
 	  		  data[i]=data[i+1];
@@ -1358,6 +1387,7 @@ void serial_reader_task(void const * argument)
 			  	  		  if(data[2]=='p')
 			  	  		  {
 			  	  			open_gripper(100); // open fully
+			  	  			sendData("open");
 			  	  		  }
 			  	  		  else if(data[2]=='s')
 			  	  		  {
@@ -1412,6 +1442,37 @@ void serial_reader_task(void const * argument)
 			  	  		  }
 
 			  		 }break;
+			  case 'g': // Gripper gap control
+			  			  	  	  {
+			  			  	  		  //M1z = 234;
+			  			  	  		  if(data[2]=='z')
+			  			  	  		  {
+			  			  	  			  //get the current gap
+			  			  	  		int gripper_gap = (M1MaxPos-adc_value[2])+(M2MaxPos-adc_value[3])-(M1MinPos+M2MinPos);
+			  			  	  		gmin = gripper_gap-55;
+			  			  	  			  //M1z=0;
+			  			  	  			  //M2z =0;
+			  			  	  			  // calibrate gripper gaps
+			  			  	  			  //for(int j=0;j<100;j++){
+			  			  	  				  //get the current gripper positions and average them
+			  			  	  				//  M1z = M1z+adc_value[2];
+			  			  	  				 // M2z = M2z+adc_value[3];
+
+			  			  	  			  //}
+			  			  	  			 // M1z = M1z/100.0;
+			  			  	  			 // M2z = M2z/100.0;
+
+			  			  	  		  }
+			  			  	  		  else if(data[2]=='g')
+			  			  	  		  {
+			  			  	  			//int gmin = (M1MinPos+M2MinPos); // TODO - can we estimate this from zero position calibration
+			  			  	  			//int gmax = (M1MaxPos-M1MinPos)+(M2MaxPos-M2MinPos)-(M1MinPos+M2MinPos);
+			  			  	  			  gripperGapcmd = scale_val(cmd_val,0,999,gmin,gmax);;
+					  			  	  			  gPid = 4;
+
+			  			  	  		  }
+
+			  			  	  	  }break;
 
 			  }
 		  }
@@ -1599,6 +1660,31 @@ void pid_timer(void const * argument)
 					gPid = 0;
 				}
 	}
+	 if(gPid==4)
+	 	 {
+		 int gripper_gap = (M1MaxPos-adc_value[2])+(M2MaxPos-adc_value[3])-(M1MinPos+M2MinPos);
+	 		 int gap_error = gripperGapcmd - gripper_gap;
+	 		// TODO  - implement PID
+	 		 g_error_integral = g_error_integral + gap_error;
+	 		 		int g_error_derivative = gap_error  - g_error_prev;
+	 		 		// calculate control value
+	 		 		int g_ctrl   = (g_Kp * gap_error) + ((g_Kd/pid_time_period)* g_error_derivative) + (g_Ki*g_error_integral*pid_time_period);
+
+	 		 		g_ctrl = clamp_val(abs(g_ctrl), 75, 100);
+	 		 		if(gap_error> gripperGapDelta)
+	 		 		{
+	 		 			open_gripper(g_ctrl);
+	 		 		}
+	 		 		else if(gap_error<(-1*gripperGapDelta))
+	 		 		{
+	 		 			close_gripper(g_ctrl);
+	 		 		}
+	 		 		else
+	 		 		{
+	 		 			brake_gripper();
+	 		 			gPid = 0;
+	 		 		}
+	 	 }
   /* USER CODE END pid_timer */
 }
 
@@ -1613,13 +1699,19 @@ void status_update_timer(void const * argument)
 	 */
 	//HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_13);
 
+	int gripper_gap = (M1MaxPos-adc_value[2])+(M2MaxPos-adc_value[3])-(M1MinPos+M2MinPos);
+	// 3600 when closed
+	//6456 when fully open
+	//int gmin = (M1MinPos+M2MinPos); // TODO - can we estimate this from zero position calibration
+	//int gmax = (M1MaxPos-M1MinPos)+(M2MaxPos-M2MinPos)-(M1MinPos+M2MinPos);
+gripper_gap =scale_val(gripper_gap, gmin, gmax, 0, 999);
 	char MSG[180];
 
+		sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
+				adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
+					irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
+					irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9], gripper_gap);
 
-	sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
-			adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
-				irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
-				irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9]);
 
 
 	sendData(MSG);
