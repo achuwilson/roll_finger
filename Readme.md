@@ -1,4 +1,5 @@
 # RollFinger
+ - noir branch has no feedback from IR sensors
  ## Requirements
   - Control Gripper open and close motors
 
