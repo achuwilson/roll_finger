@@ -35,31 +35,34 @@
 
     - position of M1, M2, M3, M4 
     - motor currents of M1+M2
+    - gripper gap value
 
 
  
  - Receive control commands from PC over UART.
     - 8N1, 115200 baud, no newline, no carriage return.
 	-   The following are the commands
-        -   cop000e - open finger
-	    -   cosXXXe -  open finger with XXX speed
-	    -   ccpXXXe - close finger with position hold, XXX current threshold    
-        -	cccXXXe - close finger with current hold
-	    -	ccsXXXe - close finger with XXX speed
-	    -   clpXXXe - left finger position roll
-	    -   clfXXXe - move left finger forward with XXX speed
-	    -   clrXXXe - move left finger reverse with XXX speed
-	    -   crpXXXe - right finger position roll
-	    -   crfXXXe - move right finger forward with XXX speed
-	    -   crrXXXe - move right finger reverse with XXX speed
-	    -   csl000e - stop left finger
-	    -   csr000e - stop right finger
-	    -   csg000e - stop gripper
-        -   csXXXXe - stop all
-	   	-   cbl000e - brake left finger
-	    -   cbr000e - brake right finger
-	    -   cbg000e - brake gripper
-	   	-   cbXXXXe - brake all
+      -   cop000e - open finger
+	   -   cosXXXe -  open finger with XXX speed
+	   -   ccpXXXe - close finger with position hold, XXX current threshold    
+      -	 cccXXXe - close finger with current hold
+	   -	 ccsXXXe - close finger with XXX speed
+	   -   clpXXXe - left finger position roll
+	   -   clfXXXe - move left finger forward with XXX speed
+	   -   clrXXXe - move left finger reverse with XXX speed
+	   -   crpXXXe - right finger position roll
+	   -   crfXXXe - move right finger forward with XXX speed
+	   -   crrXXXe - move right finger reverse with XXX speed
+	   -   csl000e - stop left finger
+	   -   csr000e - stop right finger
+	   -   csg000e - stop gripper
+      -   csXXXXe - stop all
+	   -   cbl000e - brake left finger
+	   -   cbr000e - brake right finger
+	   -   cbg000e - brake gripper
+	   -   cbXXXXe - brake all
+      -   cgz000e - set gripper gap zero position
+      -   cggXXXe - set gripper gap value
  
  - Control Neopixel RGB leds
     - WS2812 RGB LEDs
