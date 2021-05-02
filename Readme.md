@@ -35,15 +35,7 @@
 
     - position of M1, M2, M3, M4 
     - motor currents of M1+M2
-    - ADC values of 10+10=20 proximity fingers on Finger1 & Finger 2. The ADC values are sampled by ADC0 & ADC1. 10 proximity sensors are connected to an analog mux controlled by following pins. 
-        - ADC0 Mux D0 on PB12
-        - ADC0 Mux D1 on PB13
-        - ADC0 Mux D2 on PB14
-        - ADC0 Mux D3 on PB14
-        - ADC1 Mux D0 on PB10
-        - ADC1 Mux D1 on PB11
-        - ADC1 Mux D2 on PA12
-        - ADC1 Mux D3 on PA11
+
 
  
  - Receive control commands from PC over UART.
