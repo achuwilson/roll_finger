@@ -169,8 +169,8 @@ int rPosDelta = 10;
 int gCurDelta = 10;
 
 // Motor control PID loop time period in milliseconds
-// with t = 10, PID runs at 100 Hz
-uint8_t pid_time_period = 10;
+// with t = 5, PID runs at 200 Hz
+uint8_t pid_time_period = 5;
 
 // L & R Finger PID parameters
 double l_error_prev=0;
@@ -674,7 +674,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
-  // PID timer runs at 100hz
+  // PID timer runs at 200hz
   osTimerStart(pidTimerHandle, pid_time_period);
   //status update timer runs at 100 hz
   osTimerStart(statusUpdateHandle, 10);
@@ -691,8 +691,9 @@ int main(void)
 
   /* Create the thread(s) */
   /* definition and creation of adcreader */
-  osThreadDef(adcreader, adc_reader_task, osPriorityNormal, 0, 128);
-  adcreaderHandle = osThreadCreate(osThread(adcreader), NULL);
+  //ADC Reader task is disabled in noir
+ // osThreadDef(adcreader, adc_reader_task, osPriorityNormal, 0, 128);
+ // adcreaderHandle = osThreadCreate(osThread(adcreader), NULL);
 
   /* definition and creation of serialreader */
   osThreadDef(serialreader, serial_reader_task, osPriorityHigh, 0, 128);
@@ -711,7 +712,7 @@ int main(void)
   while (1)
   {
 
-
+	  //sendData("hello world");
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -1706,12 +1707,18 @@ void status_update_timer(void const * argument)
 	//int gmax = (M1MaxPos-M1MinPos)+(M2MaxPos-M2MinPos)-(M1MinPos+M2MinPos);
 gripper_gap =scale_val(gripper_gap, gmin, gmax, 0, 999);
 	char MSG[180];
-
+/*
 		sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
 				adc_value[2], adc_value[3], adc_value[4], scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
 					irdata_fr[0],irdata_fr[1], irdata_fr[2], irdata_fr[3], irdata_fr[4], irdata_fr[5], irdata_fr[6],irdata_fr[7],irdata_fr[8],irdata_fr[9],
 					irdata_fl[0],irdata_fl[1], irdata_fl[2], irdata_fl[3], irdata_fl[4], irdata_fl[5], irdata_fl[6],irdata_fl[7],irdata_fl[8],irdata_fl[9], gripper_gap);
 
+*/
+
+	sprintf(MSG, "s\t%d\t%d\t%d\t%d\t%d\t%d\te\n",
+					adc_value[2], adc_value[3], adc_value[4],
+					scale_val(adc_value[5],RFMinPos,RFMaxPos,0,200), scale_val(adc_value[6],LFMinPos,LFMaxPos,0,200),
+					gripper_gap);
 
 
 	sendData(MSG);
