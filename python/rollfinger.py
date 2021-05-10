@@ -73,6 +73,11 @@ class RollFinger():
         self.ser.write(str.encode('ccp'+format(current,'03d')+'e'))
         #self.ser.write(b'c')
         time.sleep(0.05)
+    def closeGripperVel(self, velocity=88):
+        self.ser.write(str.encode('ccs'+format(velocity,'03d')+'e'))
+    def openGripperVel(self, velocity=88):
+        self.ser.write(str.encode('cos'+format(velocity,'03d')+'e'))
+
     def readSerial(self):
         #flush the input to ensure we get the most recent data
         self.ser.flushInput()
@@ -105,6 +110,9 @@ class RollFinger():
     def getGripperPositions(self):
         data= self.readSerial()
         return data[1:3]
+    def getGripperPosnGap(self):
+        data = self.readSerial()
+        return (data[1], data[2], data[-1])    
     def getFingerPositions(self):
         data= self.readSerial()
         return data[3:5]
