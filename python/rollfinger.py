@@ -41,7 +41,8 @@ class RollFinger():
         self.fPosThreshold = 10
         self.proxThreshold =10
         #self.prev_data=np.zeros(25)
-        self.prev_data = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        #self.prev_data = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])#for ir
+        self.prev_data = np.array([0,0,0,0,0,0]) #for noir
         self.rdr = ReadLine(self.ser)
     def flushBuffer(self):
         #time.sleep(0.15)
@@ -78,7 +79,10 @@ class RollFinger():
         data_ar = raw_data.split(b'\t')
         #check for start - stop bits and length of data array
         try:
-            if((chr(raw_data[0])=='s') and(chr(raw_data[-2])=='e') and (len(data_ar)==28)):
+            #print(len(data_ar), chr(raw_data[0]),chr(raw_data[-2]))
+            #if((chr(raw_data[0])=='s') and(chr(raw_data[-2])=='e') and (len(data_ar)==28)): # for IR
+            if((chr(raw_data[0])=='s') and(chr(raw_data[-2])=='e') and (len(data_ar)==8)): # for IR
+            
                 data_ar = data_ar[1:-1]
                 #print(data_ar)
                 try:

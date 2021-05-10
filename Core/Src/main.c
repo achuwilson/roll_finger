@@ -150,8 +150,8 @@ int GapMax = 6890;
 //PID params for gripper gap control
 double g_error_prev=0;
 double g_error_integral = 0;
-double g_Kp = 1.8;
-double g_Kd = 0.8;
+double g_Kp = 1;
+double g_Kd = 0.5;
 double g_Ki = 0.0001;
 
 //gripper gap value limits
@@ -170,7 +170,7 @@ int gCurDelta = 10;
 
 // Motor control PID loop time period in milliseconds
 // with t = 5, PID runs at 200 Hz
-uint8_t pid_time_period = 5;
+uint8_t pid_time_period = 10;
 
 // L & R Finger PID parameters
 double l_error_prev=0;

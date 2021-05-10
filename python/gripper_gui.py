@@ -3,7 +3,7 @@ import tkinter
 
 import rollfinger
 from rollfinger import RollFinger
-gripper = RollFinger('/dev/ttyUSB0', 115200)
+gripper = RollFinger('/dev/ttyUSB1', 115200)
 import time
 top = tkinter.Tk()
 
@@ -26,7 +26,7 @@ def closegripper():
 
 def getgap():
     global initGap
-    for i in range(10):
+    for i in range(200):
         initGap  = gripper.getGripperGap()
     print("getgap ", gripper.getGripperGap())
 
@@ -35,7 +35,7 @@ def inc_gap():
     click_count = click_count + 1
     gapcmd  =  initGap+ click_count
     gripper.setGripperGap(gapcmd)
-    print("gap++ ", gripper.getGripperGap())
+    print("gap++ ", gripper.getGripperGap(),gapcmd)
 
 
 def dec_gap():
@@ -43,7 +43,7 @@ def dec_gap():
     click_count =  click_count - 1
     gapcmd  =  initGap+ click_count
     gripper.setGripperGap(gapcmd)
-    print("gap-- ", gripper.getGripperGap())
+    print("gap-- ", gripper.getGripperGap(),gapcmd)
 
 def finger_mid():
     gripper.setLFingerPos(100)
