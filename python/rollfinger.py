@@ -74,6 +74,8 @@ class RollFinger():
         #self.ser.write(b'c')
         time.sleep(0.05)
     def readSerial(self):
+        #flush the input to ensure we get the most recent data
+        self.ser.flushInput()
         raw_data = self.ser.readline()
         #raw_data=self.rdr.readline()
         data_ar = raw_data.split(b'\t')
