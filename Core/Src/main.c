@@ -1389,11 +1389,13 @@ void serial_reader_task(void const * argument)
 			  		  {
 			  	  		  if(data[2]=='p')
 			  	  		  {
+			  	  			gPid = 0;
 			  	  			open_gripper(100); // open fully
 			  	  			sendData("open");
 			  	  		  }
 			  	  		  else if(data[2]=='s')
 			  	  		  {
+			  	  			gPid = 0;
 			  	  			open_gripper(cmd_val); // open with speed control
 			  	  		  }
 			  		 }break;
@@ -1685,7 +1687,7 @@ void pid_timer(void const * argument)
 	 		 		else
 	 		 		{
 	 		 			brake_gripper();
-	 		 			gPid = 0;
+	 		 		//	gPid = 0;
 	 		 		}
 	 	 }
   /* USER CODE END pid_timer */
