@@ -5544,7 +5544,7 @@ LOAD /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.g
                 0x000000000800a7d0                . = ALIGN (0x4)
                 0x000000000800a7d0                _sidata = LOADADDR (.data)
 
-.data           0x0000000020000000       0xf0 load address 0x000000000800a7d0
+.data           0x0000000020000000       0xf8 load address 0x000000000800a7d0
                 0x0000000020000000                . = ALIGN (0x4)
                 0x0000000020000000                _sdata = .
  *(.data)
@@ -5579,110 +5579,110 @@ LOAD /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.g
  *fill*         0x0000000020000024        0x4 
  .data.g_Kp     0x0000000020000028        0x8 Core/Src/main.o
                 0x0000000020000028                g_Kp
- .data.gmin     0x0000000020000030        0x4 Core/Src/main.o
-                0x0000000020000030                gmin
- .data.gmax     0x0000000020000034        0x4 Core/Src/main.o
-                0x0000000020000034                gmax
+ .data.g_Kd     0x0000000020000030        0x8 Core/Src/main.o
+                0x0000000020000030                g_Kd
+ .data.gmin     0x0000000020000038        0x4 Core/Src/main.o
+                0x0000000020000038                gmin
+ .data.gmax     0x000000002000003c        0x4 Core/Src/main.o
+                0x000000002000003c                gmax
  .data.lPosDelta
-                0x0000000020000038        0x4 Core/Src/main.o
-                0x0000000020000038                lPosDelta
+                0x0000000020000040        0x4 Core/Src/main.o
+                0x0000000020000040                lPosDelta
  .data.rPosDelta
-                0x000000002000003c        0x4 Core/Src/main.o
-                0x000000002000003c                rPosDelta
+                0x0000000020000044        0x4 Core/Src/main.o
+                0x0000000020000044                rPosDelta
  .data.pid_time_period
-                0x0000000020000040        0x1 Core/Src/main.o
-                0x0000000020000040                pid_time_period
- *fill*         0x0000000020000041        0x7 
- .data.l_Kp     0x0000000020000048        0x8 Core/Src/main.o
-                0x0000000020000048                l_Kp
- .data.l_Kd     0x0000000020000050        0x8 Core/Src/main.o
-                0x0000000020000050                l_Kd
- .data.l_Ki     0x0000000020000058        0x8 Core/Src/main.o
-                0x0000000020000058                l_Ki
- .data.r_Kp     0x0000000020000060        0x8 Core/Src/main.o
-                0x0000000020000060                r_Kp
- .data.r_Kd     0x0000000020000068        0x8 Core/Src/main.o
-                0x0000000020000068                r_Kd
- .data.r_Ki     0x0000000020000070        0x8 Core/Src/main.o
-                0x0000000020000070                r_Ki
+                0x0000000020000048        0x1 Core/Src/main.o
+                0x0000000020000048                pid_time_period
+ *fill*         0x0000000020000049        0x7 
+ .data.l_Kp     0x0000000020000050        0x8 Core/Src/main.o
+                0x0000000020000050                l_Kp
+ .data.l_Kd     0x0000000020000058        0x8 Core/Src/main.o
+                0x0000000020000058                l_Kd
+ .data.l_Ki     0x0000000020000060        0x8 Core/Src/main.o
+                0x0000000020000060                l_Ki
+ .data.r_Kp     0x0000000020000068        0x8 Core/Src/main.o
+                0x0000000020000068                r_Kp
+ .data.r_Kd     0x0000000020000070        0x8 Core/Src/main.o
+                0x0000000020000070                r_Kd
+ .data.r_Ki     0x0000000020000078        0x8 Core/Src/main.o
+                0x0000000020000078                r_Ki
  .data.gTimeOut
-                0x0000000020000078        0x4 Core/Src/main.o
-                0x0000000020000078                gTimeOut
+                0x0000000020000080        0x4 Core/Src/main.o
+                0x0000000020000080                gTimeOut
  .data.SystemCoreClock
-                0x000000002000007c        0x4 Core/Src/system_stm32f1xx.o
-                0x000000002000007c                SystemCoreClock
+                0x0000000020000084        0x4 Core/Src/system_stm32f1xx.o
+                0x0000000020000084                SystemCoreClock
  .data.uwTickPrio
-                0x0000000020000080        0x4 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
-                0x0000000020000080                uwTickPrio
+                0x0000000020000088        0x4 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
+                0x0000000020000088                uwTickPrio
  .data.uwTickFreq
-                0x0000000020000084        0x1 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
-                0x0000000020000084                uwTickFreq
- *fill*         0x0000000020000085        0x3 
+                0x000000002000008c        0x1 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.o
+                0x000000002000008c                uwTickFreq
+ *fill*         0x000000002000008d        0x3 
  .data.uxCriticalNesting
-                0x0000000020000088        0x4 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o
+                0x0000000020000090        0x4 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.o
  .data._impure_ptr
-                0x000000002000008c        0x4 /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(lib_a-impure.o)
-                0x000000002000008c                _impure_ptr
+                0x0000000020000094        0x4 /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(lib_a-impure.o)
+                0x0000000020000094                _impure_ptr
  .data.impure_data
-                0x0000000020000090       0x60 /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(lib_a-impure.o)
+                0x0000000020000098       0x60 /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v7-m/nofp/libc_nano.a(lib_a-impure.o)
  *(.RamFunc)
  *(.RamFunc*)
-                0x00000000200000f0                . = ALIGN (0x4)
-                0x00000000200000f0                _edata = .
+                0x00000000200000f8                . = ALIGN (0x4)
+                0x00000000200000f8                _edata = .
 
-.igot.plt       0x00000000200000f0        0x0 load address 0x000000000800a8c0
- .igot.plt      0x00000000200000f0        0x0 /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
-                0x00000000200000f0                . = ALIGN (0x4)
+.igot.plt       0x00000000200000f8        0x0 load address 0x000000000800a8c8
+ .igot.plt      0x00000000200000f8        0x0 /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+                0x00000000200000f8                . = ALIGN (0x4)
 
-.bss            0x00000000200000f0     0x1bac load address 0x000000000800a8c0
-                0x00000000200000f0                _sbss = .
-                0x00000000200000f0                __bss_start__ = _sbss
+.bss            0x00000000200000f8     0x1ba4 load address 0x000000000800a8c8
+                0x00000000200000f8                _sbss = .
+                0x00000000200000f8                __bss_start__ = _sbss
  *(.bss)
- .bss           0x00000000200000f0       0x1c /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
+ .bss           0x00000000200000f8       0x1c /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.9-2020-q2-update.linux64_1.5.0.202011040924/tools/bin/../lib/gcc/arm-none-eabi/9.3.1/thumb/v7-m/nofp/crtbegin.o
  *(.bss*)
  .bss.xIdleTaskTCBBuffer
-                0x000000002000010c       0x54 Core/Src/freertos.o
+                0x0000000020000114       0x54 Core/Src/freertos.o
  .bss.xIdleStack
-                0x0000000020000160      0x200 Core/Src/freertos.o
+                0x0000000020000168      0x200 Core/Src/freertos.o
  .bss.xTimerTaskTCBBuffer
-                0x0000000020000360       0x54 Core/Src/freertos.o
+                0x0000000020000368       0x54 Core/Src/freertos.o
  .bss.xTimerStack
-                0x00000000200003b4      0x400 Core/Src/freertos.o
+                0x00000000200003bc      0x400 Core/Src/freertos.o
  .bss.uartTXBufferIndex
-                0x00000000200007b4        0x2 Core/Src/main.o
-                0x00000000200007b4                uartTXBufferIndex
+                0x00000000200007bc        0x2 Core/Src/main.o
+                0x00000000200007bc                uartTXBufferIndex
  .bss.uartTXBufferLength
-                0x00000000200007b6        0x2 Core/Src/main.o
-                0x00000000200007b6                uartTXBufferLength
- .bss.lrw       0x00000000200007b8        0x4 Core/Src/main.o
-                0x00000000200007b8                lrw
- .bss.lfw       0x00000000200007bc        0x4 Core/Src/main.o
-                0x00000000200007bc                lfw
- .bss.rfw       0x00000000200007c0        0x4 Core/Src/main.o
-                0x00000000200007c0                rfw
- .bss.rrw       0x00000000200007c4        0x4 Core/Src/main.o
-                0x00000000200007c4                rrw
- .bss.mgo       0x00000000200007c8        0x4 Core/Src/main.o
-                0x00000000200007c8                mgo
- .bss.mgc       0x00000000200007cc        0x4 Core/Src/main.o
-                0x00000000200007cc                mgc
- .bss.lPid      0x00000000200007d0        0x4 Core/Src/main.o
-                0x00000000200007d0                lPid
- .bss.rPid      0x00000000200007d4        0x4 Core/Src/main.o
-                0x00000000200007d4                rPid
- .bss.gPid      0x00000000200007d8        0x4 Core/Src/main.o
-                0x00000000200007d8                gPid
+                0x00000000200007be        0x2 Core/Src/main.o
+                0x00000000200007be                uartTXBufferLength
+ .bss.lrw       0x00000000200007c0        0x4 Core/Src/main.o
+                0x00000000200007c0                lrw
+ .bss.lfw       0x00000000200007c4        0x4 Core/Src/main.o
+                0x00000000200007c4                lfw
+ .bss.rfw       0x00000000200007c8        0x4 Core/Src/main.o
+                0x00000000200007c8                rfw
+ .bss.rrw       0x00000000200007cc        0x4 Core/Src/main.o
+                0x00000000200007cc                rrw
+ .bss.mgo       0x00000000200007d0        0x4 Core/Src/main.o
+                0x00000000200007d0                mgo
+ .bss.mgc       0x00000000200007d4        0x4 Core/Src/main.o
+                0x00000000200007d4                mgc
+ .bss.lPid      0x00000000200007d8        0x4 Core/Src/main.o
+                0x00000000200007d8                lPid
+ .bss.rPid      0x00000000200007dc        0x4 Core/Src/main.o
+                0x00000000200007dc                rPid
+ .bss.gPid      0x00000000200007e0        0x4 Core/Src/main.o
+                0x00000000200007e0                gPid
  .bss.gripperGapcmd
-                0x00000000200007dc        0x4 Core/Src/main.o
-                0x00000000200007dc                gripperGapcmd
+                0x00000000200007e4        0x4 Core/Src/main.o
+                0x00000000200007e4                gripperGapcmd
  .bss.g_error_prev
-                0x00000000200007e0        0x8 Core/Src/main.o
-                0x00000000200007e0                g_error_prev
- .bss.g_error_integral
                 0x00000000200007e8        0x8 Core/Src/main.o
-                0x00000000200007e8                g_error_integral
- .bss.g_Kd      0x00000000200007f0        0x8 Core/Src/main.o
-                0x00000000200007f0                g_Kd
+                0x00000000200007e8                g_error_prev
+ .bss.g_error_integral
+                0x00000000200007f0        0x8 Core/Src/main.o
+                0x00000000200007f0                g_error_integral
  .bss.g_Ki      0x00000000200007f8        0x8 Core/Src/main.o
                 0x00000000200007f8                g_Ki
  .bss.lPosDesired
@@ -5853,7 +5853,7 @@ LOAD /opt/st/stm32cubeide_1.4.0/plugins/com.st.stm32cube.ide.mcu.externaltools.g
                 0x0000000020001c9c                __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x0000000020001c9c      0x604 load address 0x000000000800a8c0
+                0x0000000020001c9c      0x604 load address 0x000000000800a8c8
                 0x0000000020001ca0                . = ALIGN (0x8)
  *fill*         0x0000000020001c9c        0x4 
                 [!provide]                        PROVIDE (end = .)

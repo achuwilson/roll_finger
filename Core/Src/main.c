@@ -150,8 +150,8 @@ int GapMax = 6890;
 //PID params for gripper gap control
 double g_error_prev=0;
 double g_error_integral = 0;
-double g_Kp = 1;
-double g_Kd = 0;//0.5;
+double g_Kp = 1.5;
+double g_Kd = 0.005;//0.5;
 double g_Ki = 0;//0.0001;
 
 //gripper gap value limits
